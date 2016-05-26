@@ -30,6 +30,10 @@ import OpenSSL
 ///
 public class SSLService : SSLServiceDelegate {
 	
+	// MARK: Constants
+	
+	let DEFAULT_VERIFY_DEPTH				= 4
+	
 	// MARK: Configuration
 	
 	public struct Configuration {
@@ -42,15 +46,26 @@ public class SSLService : SSLServiceDelegate {
 		/// Path to the key file to be used.
 		public private(set) var keyFilePath: String
 		
+		/// Path to the certificate chain file (Optional).
+		public private(set) var certificateChainFilePath: String?
+		
 		// MARK: Lifecycle
 		
 		///
 		/// Initialize a configuration
 		///
-		public init?(certificatePath: String, keyPath: String) throws {
+		/// - Parameters:
+		///		- certificateFilePath:		Path to the PEM formatted certificate file.
+		///		- keyFilePath:				Path to the PEM formatted key file.
+		///		- chainFilePath:			Path to the certificate chain file (optional).
+		///
+		///	- Returns:	New Configuration instance.
+		///
+		public init?(certificateFilePath: String, keyFilePath: String, chainFilePath: String? = nil) throws {
 			
-			self.certificateFilePath = certificatePath
-			self.keyFilePath = keyPath
+			self.certificateFilePath = certificateFilePath
+			self.keyFilePath = keyFilePath
+			self.certificateChainFilePath = chainFilePath
 		}
 	}
 	
@@ -62,9 +77,10 @@ public class SSLService : SSLServiceDelegate {
 	
 	// MARK: -- Private
 	
-	private var cSSL: SSL? = nil
-	private var method: SSL_METHOD? = nil
-	private var context: SSL_CTX? = nil
+	private var isServer: Bool = true
+	private var cSSL: UnsafeMutablePointer<SSL>? = nil
+	private var method: UnsafePointer<SSL_METHOD>? = nil
+	private var context: UnsafeMutablePointer<SSL_CTX>? = nil
 	
 	
 	// MARK: Lifecycle
@@ -101,14 +117,18 @@ public class SSLService : SSLServiceDelegate {
 		OPENSSL_add_all_algorithms_noconf()
 		
 		// Server or client specific...
+		self.isServer = isServer
 		if isServer {
 			
-			try self.initServerSide()
+			self.method = SSLv23_server_method()
 			
 		} else {
 			
-			try self.initClientSide()
+			self.method = SSLv23_client_method()
 		}
+		
+		// Prepare the context...
+		try self.prepareContext()
 	}
 	
 	///
@@ -118,17 +138,13 @@ public class SSLService : SSLServiceDelegate {
 		
 		// Shutdown and then free SSL pointer...
 		if self.cSSL != nil {
-			withUnsafeMutablePointer(&self.cSSL!) {
-				SSL_shutdown($0)
-				SSL_free($0)
-			}
+			SSL_shutdown(self.cSSL!)
+			SSL_free(self.cSSL!)
 		}
 
 		// Now the context...
 		if self.context != nil {
-			withUnsafeMutablePointer(&self.context!) {
-				SSL_CTX_free($0)
-			}
+			SSL_CTX_free(self.context!)
 		}
 		
 		// Finally, finish cleanup...
@@ -171,7 +187,7 @@ public class SSLService : SSLServiceDelegate {
 	///
 	public func send(buffer: UnsafePointer<Void>!, bufSize: Int) -> Int {
 		
-		return 0
+		return Int(SSL_write(self.cSSL, buffer, Int32(bufSize)))
 	}
 	
 	///
@@ -185,7 +201,7 @@ public class SSLService : SSLServiceDelegate {
 	///
 	public func recv(buffer: UnsafeMutablePointer<Void>!, bufSize: Int) -> Int {
 		
-		return 0
+		return Int(SSL_read(self.cSSL, buffer, Int32(bufSize)))
 	}
 	
 	// MARK: Private Methods
@@ -195,22 +211,106 @@ public class SSLService : SSLServiceDelegate {
 	///
 	private func validate(configuration: Configuration) throws {
 		
-		
+		#if os(Linux)
+			// See if we've got everything...
+			//	- First the certificate file...
+			if !NSFileManager.defaultManager().fileExists(atPath: configuration.certificateFilePath) {
+				
+				throw SSLError.fail(UInt(ENOENT), "Certificate doesn't exist at specified path.")
+			}
+			
+			//	- Now the key file...
+			if !NSFileManager.defaultManager().fileExists(atPath: configuration.keyFilePath) {
+				
+				throw SSLError.fail(UInt(ENOENT), "Key file doesn't exist at specified path.")
+			}
+			
+			//	- Finally if present the certificate chain path...
+			if let chainPath = configuration.certificateChainFilePath {
+				
+				if !NSFileManager.defaultManager().fileExists(atPath: chainPath) {
+					
+					throw SSLError.fail(UInt(ENOENT), "Certificate chain doesn't exist at specified path.")
+				}
+			}
+		#else
+			// See if we've got everything...
+			//	- First the certificate file...
+			if !NSFileManager.default().fileExists(atPath: configuration.certificateFilePath) {
+				
+				throw SSLError.fail(UInt(ENOENT), "Certificate doesn't exist at specified path.")
+			}
+			
+			//	- Now the key file...
+			if !NSFileManager.default().fileExists(atPath: configuration.keyFilePath) {
+				
+				throw SSLError.fail(UInt(ENOENT), "Key file doesn't exist at specified path.")
+			}
+			
+			//	- Finally if present the certificate chain path...
+			if let chainPath = configuration.certificateChainFilePath {
+				
+				if !NSFileManager.default().fileExists(atPath: chainPath) {
+					
+					throw SSLError.fail(UInt(ENOENT), "Certificate chain doesn't exist at specified path.")
+				}
+			}
+		#endif
 	}
 	
 	///
-	/// Initial client side SSL
+	/// Prepare the context.
 	///
-	private func initClientSide() throws {
+	private func prepareContext() throws {
 		
+		// First create the context...
+		self.context = SSL_CTX_new(self.method!)
 		
-	}
+		guard let context = self.context else {
+			
+			let reason = "ERROR: Unable to create SSL context."
+			throw SSLError.fail(UInt(ENOMEM), reason)
+			
+		}
+		
+		// Handle the client/server specific stuff first...
+		if self.isServer {
+			
+			SSL_CTX_set_verify(context, SSL_VERIFY_NONE, nil)
+		
+		} else {
+			
+			SSL_CTX_set_verify(context, SSL_VERIFY_PEER, nil)
+			SSL_CTX_set_verify_depth(context, Int32(DEFAULT_VERIFY_DEPTH))
+			SSL_CTX_ctrl(context, SSL_CTRL_OPTIONS, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION, nil)
+		}
 
-	///
-	/// Initial server side SSL
-	///
-	private func initServerSide() throws {
+		// Now configure the rest...
+		//	- First the certificate...
+		var rc = SSL_CTX_use_certificate_file(context, self.configuration.certificateFilePath, SSL_FILETYPE_PEM)
+		if rc <= 0 {
+			
+			let reason = "ERROR: Certificate file, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
+			throw SSLError.fail(UInt(rc), reason)
+		}
 		
+		///	- Private key file comes next...
+		rc = SSL_CTX_use_PrivateKey_file(context, self.configuration.keyFilePath, SSL_FILETYPE_PEM)
+		if rc <= 0 {
+			
+			let reason = "ERROR: Key file, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
+			throw SSLError.fail(UInt(rc), reason)
+		}
 		
+		//	- Finally if present the certificate chain path...
+		if let chainPath = configuration.certificateChainFilePath {
+			
+			rc = SSL_CTX_use_certificate_chain_file(context, chainPath)
+			if rc <= 0 {
+				
+				let reason = "ERROR: Certificate chain file, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
+				throw SSLError.fail(UInt(rc), reason)
+			}
+		}
 	}
 }
