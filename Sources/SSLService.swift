@@ -32,7 +32,7 @@ public class SSLService : SSLServiceDelegate {
 	
 	// MARK: Constants
 	
-	let DEFAULT_VERIFY_DEPTH				= 4
+	let DEFAULT_VERIFY_DEPTH: Int32				= 4
 	
 	// MARK: Configuration
 	
@@ -157,7 +157,22 @@ public class SSLService : SSLServiceDelegate {
 	///
 	public func onAccept(socket: Socket) throws {
 		
+		// Prepare the connection...
+		try prepareConnection(socket: socket)
 		
+		guard let sslConnect = self.cSSL else {
+			
+			let reason = "ERROR: Unable to create SSL connection."
+			throw SSLError.fail(UInt(ENOMEM), reason)
+		}
+		
+		// Start the handshake...
+		let rc = SSL_accept(sslConnect)
+		if rc <= 0 {
+			
+			let reason = "ERROR: SS_accept, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
+			throw SSLError.fail(UInt(rc), reason)
+		}
 	}
 	
 	///
@@ -165,7 +180,22 @@ public class SSLService : SSLServiceDelegate {
 	///
 	public func onConnect(socket: Socket) throws {
 		
+		// Prepare the connection...
+		try prepareConnection(socket: socket)
 		
+		guard let sslConnect = self.cSSL else {
+			
+			let reason = "ERROR: Unable to create SSL connection."
+			throw SSLError.fail(UInt(ENOMEM), reason)
+		}
+		
+		// Start the handshake...
+		let rc = SSL_connect(sslConnect)
+		if rc <= 0 {
+			
+			let reason = "ERROR: SS_connect, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
+			throw SSLError.fail(UInt(rc), reason)
+		}
 	}
 	
 	///
@@ -270,7 +300,6 @@ public class SSLService : SSLServiceDelegate {
 			
 			let reason = "ERROR: Unable to create SSL context."
 			throw SSLError.fail(UInt(ENOMEM), reason)
-			
 		}
 		
 		// Handle the client/server specific stuff first...
@@ -281,7 +310,7 @@ public class SSLService : SSLServiceDelegate {
 		} else {
 			
 			SSL_CTX_set_verify(context, SSL_VERIFY_PEER, nil)
-			SSL_CTX_set_verify_depth(context, Int32(DEFAULT_VERIFY_DEPTH))
+			SSL_CTX_set_verify_depth(context, DEFAULT_VERIFY_DEPTH)
 			SSL_CTX_ctrl(context, SSL_CTRL_OPTIONS, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION, nil)
 		}
 
@@ -312,5 +341,23 @@ public class SSLService : SSLServiceDelegate {
 				throw SSLError.fail(UInt(rc), reason)
 			}
 		}
+	}
+	
+	///
+	/// Prepare the connection for either server or client use.
+	///
+	private func prepareConnection(socket: Socket) throws {
+	
+		// Create the connection...
+		self.cSSL = SSL_new(self.context!)
+		
+		guard let sslConnect = self.cSSL else {
+			
+			let reason = "ERROR: Unable to create SSL connection."
+			throw SSLError.fail(UInt(ENOMEM), reason)
+		}
+		
+		// Set the socket file descriptor...
+		SSL_set_fd(sslConnect, socket.socketfd)
 	}
 }
