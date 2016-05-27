@@ -26,7 +26,7 @@ import OpenSSL
 // MARK: SSLService
 
 ///
-/// SSL Service Plugin for BlueSocket using OpenSSL
+/// SSL Service Plugin for Socket using OpenSSL
 ///
 public class SSLService : SSLServiceDelegate {
 	
@@ -36,6 +36,9 @@ public class SSLService : SSLServiceDelegate {
 	
 	// MARK: Configuration
 	
+	///
+	/// SSL Configuration
+	///
 	public struct Configuration {
 		
 		// MARK: Properties
@@ -46,7 +49,7 @@ public class SSLService : SSLServiceDelegate {
 		/// Path to the key file to be used.
 		public private(set) var keyFilePath: String
 		
-		/// Path to the certificate chain file (Optional).
+		/// Path to the certificate chain file (optional).
 		public private(set) var certificateChainFilePath: String?
 		
 		// MARK: Lifecycle
@@ -56,15 +59,15 @@ public class SSLService : SSLServiceDelegate {
 		///
 		/// - Parameters:
 		///		- certificateFilePath:		Path to the PEM formatted certificate file.
-		///		- keyFilePath:				Path to the PEM formatted key file.
+		///		- keyFilePath:				Path to the PEM formatted key file (optional). If nil, `certificateFilePath` is used.
 		///		- chainFilePath:			Path to the certificate chain file (optional).
 		///
 		///	- Returns:	New Configuration instance.
 		///
-		public init?(certificateFilePath: String, keyFilePath: String, chainFilePath: String? = nil) throws {
+		public init?(certificateFilePath: String, keyFilePath: String? = nil, chainFilePath: String? = nil) throws {
 			
 			self.certificateFilePath = certificateFilePath
-			self.keyFilePath = keyFilePath
+			self.keyFilePath = keyFilePath ?? certificateFilePath
 			self.certificateChainFilePath = chainFilePath
 		}
 	}
@@ -73,13 +76,22 @@ public class SSLService : SSLServiceDelegate {
 	
 	// MARK: -- Public
 	
+	/// SSL Configuration (Read only)
 	public private(set) var configuration: Configuration
 	
 	// MARK: -- Private
 	
+	/// True if setup as server, false if setup as client.
 	private var isServer: Bool = true
+	
+	/// SSL Connection
 	private var cSSL: UnsafeMutablePointer<SSL>? = nil
+	
+	/// SSL Method
+ 	/// **Note:** We use `SSLv23` which causes negotiation of the highest available SSL/TLS version.
 	private var method: UnsafePointer<SSL_METHOD>? = nil
+	
+	/// SSL Context
 	private var context: UnsafeMutablePointer<SSL_CTX>? = nil
 	
 	
@@ -111,12 +123,12 @@ public class SSLService : SSLServiceDelegate {
 	///
 	public func initialize(isServer: Bool) throws {
 		
-		// Common...
+		// Common initialization...
 		SSL_load_error_strings()
 		SSL_library_init()
 		OPENSSL_add_all_algorithms_noconf()
 		
-		// Server or client specific...
+		// Server or client specific method determination...
 		self.isServer = isServer
 		if isServer {
 			
@@ -155,53 +167,45 @@ public class SSLService : SSLServiceDelegate {
 	///
 	/// Processing on acceptance from a listening socket
 	///
+	/// - Parameter socket:	The connected Socket instance.
+	///
 	public func onAccept(socket: Socket) throws {
 		
 		// Prepare the connection...
-		try prepareConnection(socket: socket)
-		
-		guard let sslConnect = self.cSSL else {
-			
-			let reason = "ERROR: Unable to create SSL connection."
-			throw SSLError.fail(UInt(ENOMEM), reason)
-		}
-		
+		let sslConnect = try prepareConnection(socket: socket)
+
 		// Start the handshake...
 		let rc = SSL_accept(sslConnect)
 		if rc <= 0 {
 			
-			let reason = "ERROR: SS_accept, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
-			throw SSLError.fail(UInt(rc), reason)
+			let reason = "ERROR: SSL_accept, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
+			throw SSLError.fail(Int(rc), reason)
 		}
 	}
 	
 	///
 	/// Processing on connection to a listening socket
 	///
+	/// - Parameter socket:	The connected Socket instance.
+	///
 	public func onConnect(socket: Socket) throws {
 		
 		// Prepare the connection...
-		try prepareConnection(socket: socket)
-		
-		guard let sslConnect = self.cSSL else {
-			
-			let reason = "ERROR: Unable to create SSL connection."
-			throw SSLError.fail(UInt(ENOMEM), reason)
-		}
+		let sslConnect = try prepareConnection(socket: socket)
 		
 		// Start the handshake...
 		let rc = SSL_connect(sslConnect)
 		if rc <= 0 {
 			
-			let reason = "ERROR: SS_connect, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
-			throw SSLError.fail(UInt(rc), reason)
+			let reason = "ERROR: SSL_connect, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
+			throw SSLError.fail(Int(rc), reason)
 		}
 	}
 	
 	///
 	/// Do connection verification
 	///
-	public func verifyConnection(socket: Socket) throws {
+	public func verifyConnection() throws {
 		
 		
 	}
@@ -239,6 +243,8 @@ public class SSLService : SSLServiceDelegate {
 	///
 	/// Validate configuration
 	///
+	/// - Parameter configuration:	Configuration to validate.
+	///
 	private func validate(configuration: Configuration) throws {
 		
 		#if os(Linux)
@@ -246,21 +252,21 @@ public class SSLService : SSLServiceDelegate {
 			//	- First the certificate file...
 			if !NSFileManager.defaultManager().fileExists(atPath: configuration.certificateFilePath) {
 				
-				throw SSLError.fail(UInt(ENOENT), "Certificate doesn't exist at specified path.")
+				throw SSLError.fail(Int(ENOENT), "Certificate doesn't exist at specified path.")
 			}
 			
 			//	- Now the key file...
 			if !NSFileManager.defaultManager().fileExists(atPath: configuration.keyFilePath) {
 				
-				throw SSLError.fail(UInt(ENOENT), "Key file doesn't exist at specified path.")
+				throw SSLError.fail(Int(ENOENT), "Key file doesn't exist at specified path.")
 			}
 			
-			//	- Finally if present the certificate chain path...
+			//	- Finally, if present, the certificate chain path...
 			if let chainPath = configuration.certificateChainFilePath {
 				
 				if !NSFileManager.defaultManager().fileExists(atPath: chainPath) {
 					
-					throw SSLError.fail(UInt(ENOENT), "Certificate chain doesn't exist at specified path.")
+					throw SSLError.fail(Int(ENOENT), "Certificate chain doesn't exist at specified path.")
 				}
 			}
 		#else
@@ -268,21 +274,21 @@ public class SSLService : SSLServiceDelegate {
 			//	- First the certificate file...
 			if !NSFileManager.default().fileExists(atPath: configuration.certificateFilePath) {
 				
-				throw SSLError.fail(UInt(ENOENT), "Certificate doesn't exist at specified path.")
+				throw SSLError.fail(Int(ENOENT), "Certificate doesn't exist at specified path.")
 			}
 			
 			//	- Now the key file...
 			if !NSFileManager.default().fileExists(atPath: configuration.keyFilePath) {
 				
-				throw SSLError.fail(UInt(ENOENT), "Key file doesn't exist at specified path.")
+				throw SSLError.fail(Int(ENOENT), "Key file doesn't exist at specified path.")
 			}
 			
-			//	- Finally if present the certificate chain path...
+			//	- Finally, if present, the certificate chain path...
 			if let chainPath = configuration.certificateChainFilePath {
 				
 				if !NSFileManager.default().fileExists(atPath: chainPath) {
 					
-					throw SSLError.fail(UInt(ENOENT), "Certificate chain doesn't exist at specified path.")
+					throw SSLError.fail(Int(ENOENT), "Certificate chain doesn't exist at specified path.")
 				}
 			}
 		#endif
@@ -299,7 +305,7 @@ public class SSLService : SSLServiceDelegate {
 		guard let context = self.context else {
 			
 			let reason = "ERROR: Unable to create SSL context."
-			throw SSLError.fail(UInt(ENOMEM), reason)
+			throw SSLError.fail(Int(ENOMEM), reason)
 		}
 		
 		// Handle the client/server specific stuff first...
@@ -320,7 +326,7 @@ public class SSLService : SSLServiceDelegate {
 		if rc <= 0 {
 			
 			let reason = "ERROR: Certificate file, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
-			throw SSLError.fail(UInt(rc), reason)
+			throw SSLError.fail(Int(rc), reason)
 		}
 		
 		///	- Private key file comes next...
@@ -328,17 +334,25 @@ public class SSLService : SSLServiceDelegate {
 		if rc <= 0 {
 			
 			let reason = "ERROR: Key file, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
-			throw SSLError.fail(UInt(rc), reason)
+			throw SSLError.fail(Int(rc), reason)
 		}
 		
-		//	- Finally if present the certificate chain path...
+		//	- Check validity of the private key...
+		rc = SSL_CTX_check_private_key(context)
+		if rc <= 0 {
+			
+			let reason = "ERROR: Check private key, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
+			throw SSLError.fail(Int(rc), reason)
+		}
+		
+		//	- Finally, if present, the certificate chain path...
 		if let chainPath = configuration.certificateChainFilePath {
 			
 			rc = SSL_CTX_use_certificate_chain_file(context, chainPath)
 			if rc <= 0 {
 				
 				let reason = "ERROR: Certificate chain file, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
-				throw SSLError.fail(UInt(rc), reason)
+				throw SSLError.fail(Int(rc), reason)
 			}
 		}
 	}
@@ -346,18 +360,31 @@ public class SSLService : SSLServiceDelegate {
 	///
 	/// Prepare the connection for either server or client use.
 	///
-	private func prepareConnection(socket: Socket) throws {
+	/// - Parameter socket:	The connected Socket instance.
+	///
+	/// - Returns: `UnsafeMutablePointer` to the SSL connection.
+	///
+	private func prepareConnection(socket: Socket) throws -> UnsafeMutablePointer<SSL> {
 	
-		// Create the connection...
-		self.cSSL = SSL_new(self.context!)
+		// Make sure our context is valid...
+		guard let context = self.context else {
+			
+			let reason = "ERROR: Unable to access SSL context."
+			throw SSLError.fail(Int(EFAULT), reason)
+		}
+		
+		// Now create the connection...
+		self.cSSL = SSL_new(context)
 		
 		guard let sslConnect = self.cSSL else {
 			
 			let reason = "ERROR: Unable to create SSL connection."
-			throw SSLError.fail(UInt(ENOMEM), reason)
+			throw SSLError.fail(Int(EFAULT), reason)
 		}
 		
 		// Set the socket file descriptor...
 		SSL_set_fd(sslConnect, socket.socketfd)
+		
+		return sslConnect
 	}
 }
