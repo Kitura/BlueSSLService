@@ -178,8 +178,9 @@ public class SSLService : SSLServiceDelegate {
 		let rc = SSL_accept(sslConnect)
 		if rc <= 0 {
 			
-			let reason = "ERROR: SSL_accept, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
-			throw SSLError.fail(Int(rc), reason)
+			let sslError = SSL_get_error(sslConnect, rc)
+			let reason = "ERROR: SSL_accept, code: \(sslError), reason: \(ERR_error_string(UInt(sslError), nil))"
+			throw SSLError.fail(Int(sslError), reason)
 		}
 	}
 	
@@ -197,8 +198,9 @@ public class SSLService : SSLServiceDelegate {
 		let rc = SSL_connect(sslConnect)
 		if rc <= 0 {
 			
-			let reason = "ERROR: SSL_connect, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
-			throw SSLError.fail(Int(rc), reason)
+			let sslError = SSL_get_error(sslConnect, rc)
+			let reason = "ERROR: SSL_connect, code: \(sslError), reason: \(ERR_error_string(UInt(sslError), nil))"
+			throw SSLError.fail(Int(sslError), reason)
 		}
 	}
 	
@@ -219,9 +221,16 @@ public class SSLService : SSLServiceDelegate {
 	///
 	///	- Returns the number of bytes written. Zero indicates SSL shutdown, less than zero indicates error.
 	///
-	public func send(buffer: UnsafePointer<Void>!, bufSize: Int) -> Int {
+	public func send(buffer: UnsafePointer<Void>!, bufSize: Int) throws -> Int {
 		
-		return Int(SSL_write(self.cSSL, buffer, Int32(bufSize)))
+		let rc = SSL_write(self.cSSL!, buffer, Int32(bufSize))
+		if rc < 0 {
+			
+			let sslError = SSL_get_error(self.cSSL!, rc)
+			let reason = "ERROR: SSL_write, code: \(sslError), reason: \(ERR_error_string(UInt(sslError), nil))"
+			throw SSLError.fail(Int(sslError), reason)
+		}
+		return Int(rc)
 	}
 	
 	///
@@ -233,9 +242,16 @@ public class SSLService : SSLServiceDelegate {
 	///
 	///	- Returns the number of bytes read. Zero indicates SSL shutdown, less than zero indicates error.
 	///
-	public func recv(buffer: UnsafeMutablePointer<Void>!, bufSize: Int) -> Int {
+	public func recv(buffer: UnsafeMutablePointer<Void>!, bufSize: Int) throws -> Int {
 		
-		return Int(SSL_read(self.cSSL, buffer, Int32(bufSize)))
+		let rc = SSL_read(self.cSSL!, buffer, Int32(bufSize))
+		if rc < 0 {
+			
+			let sslError = SSL_get_error(self.cSSL!, rc)
+			let reason = "ERROR: SSL_read, code: \(sslError), reason: \(ERR_error_string(UInt(sslError), nil))"
+			throw SSLError.fail(Int(sslError), reason)
+		}
+		return Int(rc)
 	}
 	
 	// MARK: Private Methods
@@ -325,24 +341,27 @@ public class SSLService : SSLServiceDelegate {
 		var rc = SSL_CTX_use_certificate_file(context, self.configuration.certificateFilePath, SSL_FILETYPE_PEM)
 		if rc <= 0 {
 			
-			let reason = "ERROR: Certificate file, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
-			throw SSLError.fail(Int(rc), reason)
+			let err = ERR_get_error()
+			let reason = "ERROR: Certificate file, code: \(err), reason: \(ERR_error_string(err, nil))"
+			throw SSLError.fail(Int(err), reason)
 		}
 		
 		///	- Private key file comes next...
 		rc = SSL_CTX_use_PrivateKey_file(context, self.configuration.keyFilePath, SSL_FILETYPE_PEM)
 		if rc <= 0 {
 			
-			let reason = "ERROR: Key file, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
-			throw SSLError.fail(Int(rc), reason)
+			let err = ERR_get_error()
+			let reason = "ERROR: Key file, code: \(err), reason: \(ERR_error_string(err, nil))"
+			throw SSLError.fail(Int(err), reason)
 		}
 		
 		//	- Check validity of the private key...
 		rc = SSL_CTX_check_private_key(context)
 		if rc <= 0 {
 			
-			let reason = "ERROR: Check private key, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
-			throw SSLError.fail(Int(rc), reason)
+			let err = ERR_get_error()
+			let reason = "ERROR: Check private key, code: \(err), reason: \(ERR_error_string(err, nil))"
+			throw SSLError.fail(Int(err), reason)
 		}
 		
 		//	- Finally, if present, the certificate chain path...
@@ -351,8 +370,9 @@ public class SSLService : SSLServiceDelegate {
 			rc = SSL_CTX_use_certificate_chain_file(context, chainPath)
 			if rc <= 0 {
 				
-				let reason = "ERROR: Certificate chain file, code: \(rc), reason: \(ERR_error_string(UInt(rc), nil))"
-				throw SSLError.fail(Int(rc), reason)
+				let err = ERR_get_error()
+				let reason = "ERROR: Certificate chain file, code: \(err), reason: \(ERR_error_string(err, nil))"
+				throw SSLError.fail(Int(err), reason)
 			}
 		}
 	}
