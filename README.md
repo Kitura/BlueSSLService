@@ -43,7 +43,7 @@ To build SSLService from the command line on Linux:
 ### Before starting
 
 The first you need to do is import the `SSLService` and `Socket` frameworks.  This is done by the following:
-```
+```swift
 import Socket
 import SSLService
 ```
@@ -96,9 +96,10 @@ guard let socket = socket else {
 }
 
 // Create and attach the SSLService to the socket...
-//  - Note: if you're going to be using the same configuration
-//          over and over, it'd be better to create it in the
-//          beginning as `let` constant.
+//  - Note: if you're going to be using the same 
+//          configuration over and over, it'd be 
+//          better to create it in the beginning 
+//          as `let` constant.
 socket.delegate = try SSLService(usingConfiguration: myConfig)
 
 // Start listening...
