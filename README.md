@@ -42,7 +42,7 @@ To build SSLService from the command line on Linux:
 
 ### Before starting
 
-The first you need to do is import the Socket framework.  This is done by the following:
+The first you need to do is import the `SSLService` and `Socket` frameworks.  This is done by the following:
 ```
 import Socket
 import SSLService
@@ -74,7 +74,7 @@ let myConfig = SSLService.Configuration(certificateDirPath: caDirPath, certifica
 The following API is used to create the `SSLService`:
 - `init?(usingConfiguration config: Configuration) throws` - This will create an instance of the `SSLService` using a previously created `Configuration`.
 
-Once the `SSLService` is created is can applied to a previously created `Socket` instance that's just been created. The following code snippet illustrates how to do this.  *Note: Exception handling omitted for brevity.*
+Once the `SSLService` is created, it can applied to a previously created `Socket` instance that's just been created. This needs to be done **before** using the `Socket`. The following code snippet illustrates how to do this.  *Note: Exception handling omitted for brevity.*
 
 ```swift
 
