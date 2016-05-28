@@ -34,13 +34,13 @@ SSL Add-on framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.gi
 
 ## Build
 
-To build SSLService from the command line on OS X (assuming OpenSSL installed using `brew`):
+To build `SSLService` from the command line on OS X (assuming OpenSSL installed using `brew`):
 
 ```
 % cd <path-to-clone>
 % swift build -Xcc -I/usr/local/opt/openssl/include
 ```
-To build SSLService from the command line on Linux:
+To build `SSLService` from the command line on Linux:
 
 ```
 % cd <path-to-clone>
@@ -51,7 +51,7 @@ To build SSLService from the command line on Linux:
 
 ### Before starting
 
-The first you need to do is import the `SSLService` and `Socket` frameworks.  This is done by the following:
+The first you need to do is import both the `Socket` and `SSLService` frameworks.  This is done by the following:
 ```swift
 import Socket
 import SSLService
@@ -63,13 +63,15 @@ Both clients and server require at a minimum the following configuration items:
 * CA Certficate (either `caCertificateFile` or `caCertificateDirPath`)
 * Application certificate (`certificateFilePath`)
 * Private Key file (`keyFilePath`)
+
 **or**
+
 * Certificate Chain File (`chainFilePath`)
 
 **BlueSSLService** provides three ways to create a `Configuration`.  These are:
 - `init(withCACertificateFile caCertificateFile: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String?)` - This API allows you to create a configuration using a self contained `Certificate Authority (CA)` file. This file **must** reside in the same directory as the application. The second parameter is the path to the `Certificate` file to be used by application to establish the connection.  The third parameter is the path to the `Private Key` file used by application corresponding to the `Public Key` in the `Certificate`.
 - `init(withCACertificateDirectory caCertificateDirPath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String?)` - This API allow you to create a configuration using a directory of `Certificate Authority (CA)` files. These `CA` certificates **must** be hashed using the `Certificate Tool` provided by `OpenSSL`. The remaining parameters are identical to the previous API.
-- `init(chainFilePath: String?)` - This API allow you to create a configuration using single `Certificate Chain File` (see note 2 below).
+- `init(withChainFilePath chainFilePath: String?)` - This API allow you to create a configuration using single `Certificate Chain File` (see note 2 below).
 
 *Note 1:* All `Certificate` and `Private Key` files must be `PEM` format.
 
@@ -132,9 +134,9 @@ socket.delegate = try SSLService(usingConfiguration: myConfig)
 try socket.listen(on: 1337)
 
 ```
-The example above creates a `SSL server` socket. Replacing the `socket.listen` function wit a `socket.connect` would result in an `SSL client` being created as illustrated below:
+The example above creates a `SSL server` socket. Replacing the `socket.listen` function with a `socket.connect` would result in an `SSL client` being created as illustrated below:
 ```
 // Connect to the server...
 try socket.connect(to: "someplace.org", port: 1337)
 ```
-`SSLService` handles all the negotiation and setup for the secure transfer of data.
+`SSLService` handles all the negotiation and setup for the secure transfer of data. The determining factor for whether or not a `Socket` is setup as a server or client `Socket` is API which is used to initiate a connection. `listen()` will cause the `Socket` to be setup as a server socket.  Calling `connect()` results a client setup.
