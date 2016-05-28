@@ -52,10 +52,10 @@ public class SSLService : SSLServiceDelegate {
 		public private(set) var caCertificateDirPath: String? = nil
 		
 		/// Path to the certificate file to be used.
-		public private(set) var certificateFilePath: String
+		public private(set) var certificateFilePath: String? = nil
 		
 		/// Path to the key file to be used.
-		public private(set) var keyFilePath: String
+		public private(set) var keyFilePath: String? = nil
 		
 		/// Path to the certificate chain file (optional).
 		public private(set) var certificateChainFilePath: String?
@@ -66,20 +66,20 @@ public class SSLService : SSLServiceDelegate {
 		/// Initialize a configuration
 		///
 		/// - Parameters:
-		///		- caCertificateFile:		Name of the PEM formatted CA certificate file. *(see note below)*
+		///		- caCertificateFile:		Name of the PEM formatted CA certificate file. *(see note 1 below)*
 		///		- certificateFilePath:		Path to the PEM formatted certificate file.
-		///		- keyFilePath:				Path to the PEM formatted key file (optional). If nil, `certificateFilePath` is used.
-		///		- chainFilePath:			Path to the certificate chain file (optional).
+		///		- keyFilePath:				Path to the PEM formatted key file.
+		///		- chainFilePath:			Path to the certificate chain file. *(see note 2 below)*
 		///
-		///	*Note:* `caCertificateFile` **must** reside in the same directory as the application.
-		///
+		///	*Note 1:* `caCertificateFile` **must** reside in the same directory as the application.
+		/// *Note 2:* If using a certificate chain file, the certificates must be in PEM format and must be sorted starting with the subject's certificate (actual client or server certificate), followed by intermediate CA certificates if applicable, and ending at the highest level (root) CA.
 		///	- Returns:	New Configuration instance.
 		///
-		public init(caCertificateFile: String, certificateFilePath: String, keyFilePath: String? = nil, chainFilePath: String? = nil) {
+		public init(caCertificateFile: String?, certificateFilePath: String?, keyFilePath: String?, chainFilePath: String? = nil) {
 			
 			self.caCertificateFile = caCertificateFile
 			self.certificateFilePath = certificateFilePath
-			self.keyFilePath = keyFilePath ?? certificateFilePath
+			self.keyFilePath = keyFilePath
 			self.certificateChainFilePath = chainFilePath
 		}
 
@@ -87,20 +87,21 @@ public class SSLService : SSLServiceDelegate {
 		/// Initialize a configuration
 		///
 		/// - Parameters:
-		///		- certificateDirPath:		Path to a directory containing CA certificates. *(see note below)*
+		///		- caCertificateDirPath:		Path to a directory containing CA certificates. *(see note 1 below)*
 		///		- certificateFilePath:		Path to the PEM formatted certificate file.
 		///		- keyFilePath:				Path to the PEM formatted key file (optional). If nil, `certificateFilePath` is used.
-		///		- chainFilePath:			Path to the certificate chain file (optional).
+		///		- chainFilePath:			Path to the certificate chain file (optional). *(see note 2 below)*
 		///
-		///	*Note:* `caCertificateDirPath` - All certificates in the specified directory **must** be hashed.
+		///	*Note 1:* `caCertificateDirPath` - All certificates in the specified directory **must** be hashed.
+		/// *Note 2:* If using a certificate chain file, the certificates must be in PEM format and must be sorted starting with the subject's certificate (actual client or server certificate), followed by intermediate CA certificates if applicable, and ending at the highest level (root) CA.
 		///
 		///	- Returns:	New Configuration instance.
 		///
-		public init(certificateDirPath: String, certificateFilePath: String, keyFilePath: String? = nil, chainFilePath: String? = nil) {
+		public init(caCertificateDirPath: String?, certificateFilePath: String?, keyFilePath: String?, chainFilePath: String? = nil) {
 			
-			self.caCertificateDirPath = certificateDirPath
+			self.caCertificateDirPath = caCertificateDirPath
 			self.certificateFilePath = certificateFilePath
-			self.keyFilePath = keyFilePath ?? certificateFilePath
+			self.keyFilePath = keyFilePath
 			self.certificateChainFilePath = chainFilePath
 		}
 	}
@@ -328,6 +329,19 @@ public class SSLService : SSLServiceDelegate {
 	///
 	private func validate(configuration: Configuration) throws {
 		
+		// Need a CA certificate...
+		if configuration.caCertificateFile == nil && configuration.caCertificateDirPath == nil {
+		
+			throw SSLError.fail(Int(ENOENT), "CA Certificate not specified.")
+		}
+		
+		// Also need a certificate file and key file...
+		if configuration.certificateFilePath == nil || configuration.keyFilePath == nil {
+			
+			throw SSLError.fail(Int(ENOENT), "Certificate and/or key file not specified.")
+		}
+		
+		// Now check if what's specified actually exists...
 		#if os(Linux)
 			// See if we've got everything...
 			//	- First the CA...
@@ -354,15 +368,21 @@ public class SSLService : SSLServiceDelegate {
 			}
 			
 			//	- Then the certificate file...
-			if !NSFileManager.defaultManager().fileExists(atPath: configuration.certificateFilePath) {
+			if let certFilePath = configuration.certificateFilePath {
 				
-				throw SSLError.fail(Int(ENOENT), "Certificate doesn't exist at specified path.")
+				if !NSFileManager.defaultManager().fileExists(atPath: certFilePath) {
+					
+					throw SSLError.fail(Int(ENOENT), "Certificate doesn't exist at specified path.")
+				}
 			}
 			
 			//	- Now the key file...
-			if !NSFileManager.defaultManager().fileExists(atPath: configuration.keyFilePath) {
+			if let keyFilePath = configuration.keyFilePath {
 				
-				throw SSLError.fail(Int(ENOENT), "Key file doesn't exist at specified path.")
+				if !NSFileManager.defaultManager().fileExists(atPath: keyFilePath) {
+					
+					throw SSLError.fail(Int(ENOENT), "Key file doesn't exist at specified path.")
+				}
 			}
 			
 			//	- Finally, if present, the certificate chain path...
@@ -399,15 +419,21 @@ public class SSLService : SSLServiceDelegate {
 			}
 			
 			//	- Then the certificate file...
-			if !NSFileManager.default().fileExists(atPath: configuration.certificateFilePath) {
+			if let certFilePath = configuration.certificateFilePath {
 				
-				throw SSLError.fail(Int(ENOENT), "Certificate doesn't exist at specified path.")
+				if !NSFileManager.default().fileExists(atPath: certFilePath) {
+					
+					throw SSLError.fail(Int(ENOENT), "Certificate doesn't exist at specified path.")
+				}
 			}
 			
 			//	- Now the key file...
-			if !NSFileManager.default().fileExists(atPath: configuration.keyFilePath) {
+			if let keyFilePath = configuration.keyFilePath {
 				
-				throw SSLError.fail(Int(ENOENT), "Key file doesn't exist at specified path.")
+				if !NSFileManager.default().fileExists(atPath: keyFilePath) {
+					
+					throw SSLError.fail(Int(ENOENT), "Key file doesn't exist at specified path.")
+				}
 			}
 			
 			//	- Finally, if present, the certificate chain path...
@@ -429,7 +455,7 @@ public class SSLService : SSLServiceDelegate {
 		// Make sure we've got the method to use...
 		guard let method = self.method else {
 			
-			let reason = "ERROR: Unable to create SSL context."
+			let reason = "ERROR: Unable to reference SSL method."
 			throw SSLError.fail(Int(ENOMEM), reason)
 		}
 		
@@ -453,42 +479,54 @@ public class SSLService : SSLServiceDelegate {
 		}
 
 		// Now configure the rest...
-		// 	- First is the CA certificate(s)...
-		let caFile = self.configuration.caCertificateFile
-		let caPath = self.configuration.caCertificateDirPath
-		var rc = SSL_CTX_load_verify_locations(context, caFile, caPath)
-		if rc <= 0 {
+		//	Note: We've already verified the configuration, so we've at least got the minimum requirements.
+		// 	- First process the CA certificate(s)...
+		var rc: Int32 = 0
+		if configuration.caCertificateFile != nil || configuration.caCertificateDirPath != nil {
 			
-			let err = ERR_get_error()
-			let reason = "ERROR: CA Certificate file/dir, code: \(err), reason: \(ERR_error_string(err, nil))"
-			throw SSLError.fail(Int(err), reason)
+			let caFile = self.configuration.caCertificateFile
+			let caPath = self.configuration.caCertificateDirPath
+			
+			rc = SSL_CTX_load_verify_locations(context, caFile, caPath)
+			if rc <= 0 {
+				
+				let err = ERR_get_error()
+				let reason = "ERROR: CA Certificate file/dir, code: \(err), reason: \(ERR_error_string(err, nil))"
+				throw SSLError.fail(Int(err), reason)
+			}
 		}
 		
-		//	- Now the certificate...
-		rc = SSL_CTX_use_certificate_file(context, self.configuration.certificateFilePath, SSL_FILETYPE_PEM)
-		if rc <= 0 {
+		//	- Then the certificate...
+		if let certFilePath = self.configuration.certificateFilePath {
 			
-			let err = ERR_get_error()
-			let reason = "ERROR: Certificate file, code: \(err), reason: \(ERR_error_string(err, nil))"
-			throw SSLError.fail(Int(err), reason)
+			rc = SSL_CTX_use_certificate_file(context, certFilePath, SSL_FILETYPE_PEM)
+			if rc <= 0 {
+				
+				let err = ERR_get_error()
+				let reason = "ERROR: Certificate file, code: \(err), reason: \(ERR_error_string(err, nil))"
+				throw SSLError.fail(Int(err), reason)
+			}
 		}
 		
-		///	- Private key file comes next...
-		rc = SSL_CTX_use_PrivateKey_file(context, self.configuration.keyFilePath, SSL_FILETYPE_PEM)
-		if rc <= 0 {
+		//	- Private key file comes next...
+		if let keyFilePath = self.configuration.keyFilePath {
 			
-			let err = ERR_get_error()
-			let reason = "ERROR: Key file, code: \(err), reason: \(ERR_error_string(err, nil))"
-			throw SSLError.fail(Int(err), reason)
-		}
-		
-		//	- Check validity of the private key...
-		rc = SSL_CTX_check_private_key(context)
-		if rc <= 0 {
-			
-			let err = ERR_get_error()
-			let reason = "ERROR: Check private key, code: \(err), reason: \(ERR_error_string(err, nil))"
-			throw SSLError.fail(Int(err), reason)
+			rc = SSL_CTX_use_PrivateKey_file(context, keyFilePath, SSL_FILETYPE_PEM)
+			if rc <= 0 {
+				
+				let err = ERR_get_error()
+				let reason = "ERROR: Key file, code: \(err), reason: \(ERR_error_string(err, nil))"
+				throw SSLError.fail(Int(err), reason)
+			}
+
+			// Check it for consistency
+			rc = SSL_CTX_check_private_key(context)
+			if rc <= 0 {
+				
+				let err = ERR_get_error()
+				let reason = "ERROR: Check private key, code: \(err), reason: \(ERR_error_string(err, nil))"
+				throw SSLError.fail(Int(err), reason)
+			}
 		}
 		
 		//	- Finally, if present, the certificate chain path...
