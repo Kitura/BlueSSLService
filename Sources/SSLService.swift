@@ -58,50 +58,60 @@ public class SSLService : SSLServiceDelegate {
 		public private(set) var keyFilePath: String? = nil
 		
 		/// Path to the certificate chain file (optional).
-		public private(set) var certificateChainFilePath: String?
+		public private(set) var certificateChainFilePath: String? = nil
 		
 		// MARK: Lifecycle
 		
 		///
-		/// Initialize a configuration
+		/// Initialize a configuration using a `CA Certificate` file.
 		///
 		/// - Parameters:
-		///		- caCertificateFile:		Name of the PEM formatted CA certificate file. *(see note 1 below)*
+		///		- caCertificateFile:		Name of the PEM formatted CA certificate file. *(see note below)*
 		///		- certificateFilePath:		Path to the PEM formatted certificate file.
 		///		- keyFilePath:				Path to the PEM formatted key file.
-		///		- chainFilePath:			Path to the certificate chain file. *(see note 2 below)*
 		///
-		///	*Note 1:* `caCertificateFile` **must** reside in the same directory as the application.
-		/// *Note 2:* If using a certificate chain file, the certificates must be in PEM format and must be sorted starting with the subject's certificate (actual client or server certificate), followed by intermediate CA certificates if applicable, and ending at the highest level (root) CA.
+		///	*Note:* `caCertificateFile` **must** reside in the same directory as the application.
+		///
 		///	- Returns:	New Configuration instance.
 		///
-		public init(caCertificateFile: String?, certificateFilePath: String?, keyFilePath: String?, chainFilePath: String? = nil) {
+		public init(withCACertificate caCertificateFile: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String?) {
 			
 			self.caCertificateFile = caCertificateFile
 			self.certificateFilePath = certificateFilePath
 			self.keyFilePath = keyFilePath
-			self.certificateChainFilePath = chainFilePath
 		}
 
 		///
-		/// Initialize a configuration
+		/// Initialize a configuration using a `CA Certificate` directory.
 		///
 		/// - Parameters:
-		///		- caCertificateDirPath:		Path to a directory containing CA certificates. *(see note 1 below)*
+		///		- caCertificateDirPath:		Path to a directory containing CA certificates. *(see note below)*
 		///		- certificateFilePath:		Path to the PEM formatted certificate file.
 		///		- keyFilePath:				Path to the PEM formatted key file (optional). If nil, `certificateFilePath` is used.
-		///		- chainFilePath:			Path to the certificate chain file (optional). *(see note 2 below)*
+		///
+		///	*Note:* `caCertificateDirPath` - All certificates in the specified directory **must** be hashed.
+		///
+		///	- Returns:	New Configuration instance.
+		///
+		public init(withCACertificateDirectory caCertificateDirPath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String?) {
+			
+			self.caCertificateDirPath = caCertificateDirPath
+			self.certificateFilePath = certificateFilePath
+			self.keyFilePath = keyFilePath
+		}
+
+		///
+		/// Initialize a configuration using a `Certificate Chain File`.
+		///
+		/// - Parameter chainFilePath:		Path to the certificate chain file (optional). *(see note 2 below)*
 		///
 		///	*Note 1:* `caCertificateDirPath` - All certificates in the specified directory **must** be hashed.
 		/// *Note 2:* If using a certificate chain file, the certificates must be in PEM format and must be sorted starting with the subject's certificate (actual client or server certificate), followed by intermediate CA certificates if applicable, and ending at the highest level (root) CA.
 		///
 		///	- Returns:	New Configuration instance.
 		///
-		public init(caCertificateDirPath: String?, certificateFilePath: String?, keyFilePath: String?, chainFilePath: String? = nil) {
+		public init(withChainFilePath chainFilePath: String? = nil) {
 			
-			self.caCertificateDirPath = caCertificateDirPath
-			self.certificateFilePath = certificateFilePath
-			self.keyFilePath = keyFilePath
 			self.certificateChainFilePath = chainFilePath
 		}
 	}
@@ -329,16 +339,20 @@ public class SSLService : SSLServiceDelegate {
 	///
 	private func validate(configuration: Configuration) throws {
 		
-		// Need a CA certificate...
-		if configuration.caCertificateFile == nil && configuration.caCertificateDirPath == nil {
-		
-			throw SSLError.fail(Int(ENOENT), "CA Certificate not specified.")
-		}
-		
-		// Also need a certificate file and key file...
-		if configuration.certificateFilePath == nil || configuration.keyFilePath == nil {
+		// If we don't have a certificate chain file, we require the following...
+		if configuration.certificateChainFilePath == nil {
 			
-			throw SSLError.fail(Int(ENOENT), "Certificate and/or key file not specified.")
+			// Need a CA certificate (file or directory)...
+			if configuration.caCertificateFile == nil && configuration.caCertificateDirPath == nil {
+				
+				throw SSLError.fail(Int(ENOENT), "CA Certificate not specified.")
+			}
+			
+			// Also need a certificate file and key file...
+			if configuration.certificateFilePath == nil || configuration.keyFilePath == nil {
+				
+				throw SSLError.fail(Int(ENOENT), "Certificate and/or key file not specified.")
+			}
 		}
 		
 		// Now check if what's specified actually exists...
@@ -480,7 +494,7 @@ public class SSLService : SSLServiceDelegate {
 
 		// Now configure the rest...
 		//	Note: We've already verified the configuration, so we've at least got the minimum requirements.
-		// 	- First process the CA certificate(s)...
+		// 	- First process the CA certificate(s) if any...
 		var rc: Int32 = 0
 		if configuration.caCertificateFile != nil || configuration.caCertificateDirPath != nil {
 			
@@ -496,7 +510,7 @@ public class SSLService : SSLServiceDelegate {
 			}
 		}
 		
-		//	- Then the certificate...
+		//	- Then the app certificate...
 		if let certFilePath = self.configuration.certificateFilePath {
 			
 			rc = SSL_CTX_use_certificate_file(context, certFilePath, SSL_FILETYPE_PEM)
@@ -508,7 +522,7 @@ public class SSLService : SSLServiceDelegate {
 			}
 		}
 		
-		//	- Private key file comes next...
+		//	- An' the corresponding Private key file...
 		if let keyFilePath = self.configuration.keyFilePath {
 			
 			rc = SSL_CTX_use_PrivateKey_file(context, keyFilePath, SSL_FILETYPE_PEM)
@@ -519,7 +533,7 @@ public class SSLService : SSLServiceDelegate {
 				throw SSLError.fail(Int(err), reason)
 			}
 
-			// Check it for consistency
+			// Check it for consistency...
 			rc = SSL_CTX_check_private_key(context)
 			if rc <= 0 {
 				
