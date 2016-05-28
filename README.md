@@ -65,10 +65,10 @@ Both clients and server require at a minimum the following configuration items:
 * Private Key file (`keyFilePath`)
 
 **BlueSSLService** provides two ways to create a `Configuration`.  These are:
-- `init(caCertificateFile: String?, certificateFilePath: String?, keyFilePath: String?, chainFilePath: String? = nil)` - This API allows you to create a configuration using a self contained `Certificate Authority` file. This file **must** reside in the same directory as the application. The second parameter is the path to the `Certificate` file to be used by application to establish the connection.  The third parameter is the path to the `Private Key` file used by application corresponding to the public key in the `Certificate`.  The fourth parameter is the path to the `Certificate` chain file if applicable (see note 2 below).
-- `init(caCertificateDirPath: String?, certificateFilePath: String?, keyFilePath: String? = nil, chainFilePath: String? = nil)` - This API allow you to create a configuration using a directory of `Certificate Authority` files. These CA certificates **must** be hashed using the `Certificate Tool` provided by `OpenSSL`.  The remaining parameters are identical to the previous API.
+- `init(caCertificateFile: String?, certificateFilePath: String?, keyFilePath: String?, chainFilePath: String? = nil)` - This API allows you to create a configuration using a self contained `Certificate Authority (CA)` file. This file **must** reside in the same directory as the application. The second parameter is the path to the `Certificate` file to be used by application to establish the connection.  The third parameter is the path to the `Private Key` file used by application corresponding to the `Public Key` in the `Certificate`.  The fourth parameter is the path to the `Certificate` chain file if applicable (see note 2 below).
+- `init(caCertificateDirPath: String?, certificateFilePath: String?, keyFilePath: String? = nil, chainFilePath: String? = nil)` - This API allow you to create a configuration using a directory of `Certificate Authority (CA)` files. These `CA` certificates **must** be hashed using the `Certificate Tool` provided by `OpenSSL`.  The remaining parameters are identical to the previous API.
 
-*Note 1:* All `Certificate`'s and `Private Key` files must be `PEM` format.
+*Note 1:* All `Certificate` and `Private Key` files must be `PEM` format.
 
 *Note 2:* If using a certificate chain file, the certificates must be in `PEM` format and must be sorted starting with the subject's certificate (actual client or server certificate), followed by intermediate `CA` certificates if applicable, and ending at the highest level (root) `CA`.
 
