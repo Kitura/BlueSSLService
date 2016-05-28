@@ -65,12 +65,12 @@ public class SSLService : SSLServiceDelegate {
 		///
 		/// Initialize a configuration using a `CA Certificate` file.
 		///
+		///	*Note:* `caCertificateFile` **must** reside in the **same** directory as the application.
+		///
 		/// - Parameters:
-		///		- caCertificateFile:		Name of the PEM formatted CA certificate file. *(see note below)*
+		///		- caCertificateFile:		Name of the PEM formatted CA certificate file. *(see note above)*
 		///		- certificateFilePath:		Path to the PEM formatted certificate file.
 		///		- keyFilePath:				Path to the PEM formatted key file.
-		///
-		///	*Note:* `caCertificateFile` **must** reside in the same directory as the application.
 		///
 		///	- Returns:	New Configuration instance.
 		///
@@ -84,12 +84,12 @@ public class SSLService : SSLServiceDelegate {
 		///
 		/// Initialize a configuration using a `CA Certificate` directory.
 		///
+		///	*Note:* `caCertificateDirPath` - All certificates in the specified directory **must** be hashed using the `OpenSSL Certificate Tool`.
+		///
 		/// - Parameters:
-		///		- caCertificateDirPath:		Path to a directory containing CA certificates. *(see note below)*
+		///		- caCertificateDirPath:		Path to a directory containing CA certificates. *(see note above)*
 		///		- certificateFilePath:		Path to the PEM formatted certificate file.
 		///		- keyFilePath:				Path to the PEM formatted key file (optional). If nil, `certificateFilePath` is used.
-		///
-		///	*Note:* `caCertificateDirPath` - All certificates in the specified directory **must** be hashed.
 		///
 		///	- Returns:	New Configuration instance.
 		///
@@ -103,10 +103,9 @@ public class SSLService : SSLServiceDelegate {
 		///
 		/// Initialize a configuration using a `Certificate Chain File`.
 		///
-		/// - Parameter chainFilePath:		Path to the certificate chain file (optional). *(see note 2 below)*
+		/// *Note:* If using a certificate chain file, the certificates must be in PEM format and must be sorted starting with the subject's certificate (actual client or server certificate), followed by intermediate CA certificates if applicable, and ending at the highest level (root) CA.
 		///
-		///	*Note 1:* `caCertificateDirPath` - All certificates in the specified directory **must** be hashed.
-		/// *Note 2:* If using a certificate chain file, the certificates must be in PEM format and must be sorted starting with the subject's certificate (actual client or server certificate), followed by intermediate CA certificates if applicable, and ending at the highest level (root) CA.
+		/// - Parameter chainFilePath:		Path to the certificate chain file (optional). *(see note above)*
 		///
 		///	- Returns:	New Configuration instance.
 		///
