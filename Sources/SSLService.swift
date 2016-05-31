@@ -32,7 +32,7 @@ public class SSLService : SSLServiceDelegate {
 	
 	// MARK: Constants
 	
-	let DEFAULT_VERIFY_DEPTH: Int32				= 1
+	let DEFAULT_VERIFY_DEPTH: Int32				= 4
 	
 	// MARK: Configuration
 	
@@ -80,7 +80,7 @@ public class SSLService : SSLServiceDelegate {
 			self.certificateFilePath = certificateFilePath
 			self.keyFilePath = keyFilePath
 		}
-
+		
 		///
 		/// Initialize a configuration using a `CA Certificate` directory.
 		///
@@ -99,7 +99,7 @@ public class SSLService : SSLServiceDelegate {
 			self.certificateFilePath = certificateFilePath
 			self.keyFilePath = keyFilePath
 		}
-
+		
 		///
 		/// Initialize a configuration using a `Certificate Chain File`.
 		///
@@ -131,7 +131,7 @@ public class SSLService : SSLServiceDelegate {
 	private var cSSL: UnsafeMutablePointer<SSL>? = nil
 	
 	/// SSL Method
- 	/// **Note:** We use `SSLv23` which causes negotiation of the highest available SSL/TLS version.
+	/// **Note:** We use `SSLv23` which causes negotiation of the highest available SSL/TLS version.
 	private var method: UnsafePointer<SSL_METHOD>? = nil
 	
 	/// SSL Context
@@ -151,7 +151,7 @@ public class SSLService : SSLServiceDelegate {
 		
 		// Store it...
 		self.configuration = config
-	
+		
 		// Validate the config...
 		try self.validate(configuration: config)
 	}
@@ -167,9 +167,10 @@ public class SSLService : SSLServiceDelegate {
 	public func initialize(isServer: Bool) throws {
 		
 		// Common initialization...
-		SSL_load_error_strings()
 		SSL_library_init()
-		OPENSSL_add_all_algorithms_noconf()
+		SSL_load_error_strings()
+		OPENSSL_config(nil)
+		OPENSSL_add_all_algorithms_conf()
 		
 		// Server or client specific method determination...
 		self.isServer = isServer
@@ -196,7 +197,7 @@ public class SSLService : SSLServiceDelegate {
 			SSL_shutdown(self.cSSL!)
 			SSL_free(self.cSSL!)
 		}
-
+		
 		// Now the context...
 		if self.context != nil {
 			SSL_CTX_free(self.context!)
@@ -216,14 +217,12 @@ public class SSLService : SSLServiceDelegate {
 		
 		// Prepare the connection...
 		let sslConnect = try prepareConnection(socket: socket)
-
+		
 		// Start the handshake...
 		let rc = SSL_accept(sslConnect)
 		if rc <= 0 {
 			
-			let sslError = SSL_get_error(sslConnect, rc)
-			let reason = "ERROR: SSL_accept, code: \(sslError), reason: \(ERR_error_string(UInt(sslError), nil))"
-			throw SSLError.fail(Int(sslError), reason)
+			try self.throwLastError(source: "SSL_accept")
 		}
 	}
 	
@@ -241,9 +240,7 @@ public class SSLService : SSLServiceDelegate {
 		let rc = SSL_connect(sslConnect)
 		if rc <= 0 {
 			
-			let sslError = SSL_get_error(sslConnect, rc)
-			let reason = "ERROR: SSL_connect, code: \(sslError), reason: \(ERR_error_string(UInt(sslError), nil))"
-			throw SSLError.fail(Int(sslError), reason)
+			try self.throwLastError(source: "SSL_connect")
 		}
 	}
 	
@@ -295,9 +292,7 @@ public class SSLService : SSLServiceDelegate {
 		let rc = SSL_write(sslConnect, buffer, Int32(bufSize))
 		if rc < 0 {
 			
-			let sslError = SSL_get_error(self.cSSL!, rc)
-			let reason = "ERROR: SSL_write, code: \(sslError), reason: \(ERR_error_string(UInt(sslError), nil))"
-			throw SSLError.fail(Int(sslError), reason)
+			try self.throwLastError(source: "SSL_write")
 		}
 		return Int(rc)
 	}
@@ -322,9 +317,7 @@ public class SSLService : SSLServiceDelegate {
 		let rc = SSL_read(sslConnect, buffer, Int32(bufSize))
 		if rc < 0 {
 			
-			let sslError = SSL_get_error(self.cSSL!, rc)
-			let reason = "ERROR: SSL_read, code: \(sslError), reason: \(ERR_error_string(UInt(sslError), nil))"
-			throw SSLError.fail(Int(sslError), reason)
+			try self.throwLastError(source: "SSL_read")
 		}
 		return Int(rc)
 	}
@@ -343,8 +336,8 @@ public class SSLService : SSLServiceDelegate {
 			
 			// Need a CA certificate (file or directory)...
 			if configuration.caCertificateFile == nil && configuration.caCertificateDirPath == nil {
-				
-				throw SSLError.fail(Int(ENOENT), "CA Certificate not specified.")
+			
+			throw SSLError.fail(Int(ENOENT), "CA Certificate not specified.")
 			}
 			
 			// Also need a certificate file and key file...
@@ -482,15 +475,17 @@ public class SSLService : SSLServiceDelegate {
 		}
 		
 		// Handle the stuff common to both client and server...
+		SSL_CTX_set_cipher_list(context, "ALL")
 		SSL_CTX_set_verify(context, SSL_VERIFY_PEER, nil)
 		SSL_CTX_set_verify_depth(context, DEFAULT_VERIFY_DEPTH)
+		SSL_CTX_set_tlsext_use_srtp(context, "SRTP_AES128_CM_SHA1_80")
 		
 		// Then handle the client/server specific stuff...
 		if !self.isServer {
 			
-			SSL_CTX_ctrl(context, SSL_CTRL_OPTIONS, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION, nil)
+			//SSL_CTX_ctrl(context, SSL_CTRL_OPTIONS, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION, nil)
 		}
-
+		
 		// Now configure the rest...
 		//	Note: We've already verified the configuration, so we've at least got the minimum requirements.
 		// 	- First process the CA certificate(s) if any...
@@ -503,9 +498,7 @@ public class SSLService : SSLServiceDelegate {
 			rc = SSL_CTX_load_verify_locations(context, caFile, caPath)
 			if rc <= 0 {
 				
-				let err = ERR_get_error()
-				let reason = "ERROR: CA Certificate file/dir, code: \(err), reason: \(ERR_error_string(err, nil))"
-				throw SSLError.fail(Int(err), reason)
+				try self.throwLastError(source: "CA Certificate file/dir")
 			}
 		}
 		
@@ -515,9 +508,7 @@ public class SSLService : SSLServiceDelegate {
 			rc = SSL_CTX_use_certificate_file(context, certFilePath, SSL_FILETYPE_PEM)
 			if rc <= 0 {
 				
-				let err = ERR_get_error()
-				let reason = "ERROR: Certificate file, code: \(err), reason: \(ERR_error_string(err, nil))"
-				throw SSLError.fail(Int(err), reason)
+				try self.throwLastError(source: "Certificate")
 			}
 		}
 		
@@ -527,18 +518,14 @@ public class SSLService : SSLServiceDelegate {
 			rc = SSL_CTX_use_PrivateKey_file(context, keyFilePath, SSL_FILETYPE_PEM)
 			if rc <= 0 {
 				
-				let err = ERR_get_error()
-				let reason = "ERROR: Key file, code: \(err), reason: \(ERR_error_string(err, nil))"
-				throw SSLError.fail(Int(err), reason)
+				try self.throwLastError(source: "Key file")
 			}
-
+			
 			// Check it for consistency...
 			rc = SSL_CTX_check_private_key(context)
 			if rc <= 0 {
 				
-				let err = ERR_get_error()
-				let reason = "ERROR: Check private key, code: \(err), reason: \(ERR_error_string(err, nil))"
-				throw SSLError.fail(Int(err), reason)
+				try self.throwLastError(source: "Check private key")
 			}
 		}
 		
@@ -548,9 +535,7 @@ public class SSLService : SSLServiceDelegate {
 			rc = SSL_CTX_use_certificate_chain_file(context, chainPath)
 			if rc <= 0 {
 				
-				let err = ERR_get_error()
-				let reason = "ERROR: Certificate chain file, code: \(err), reason: \(ERR_error_string(err, nil))"
-				throw SSLError.fail(Int(err), reason)
+				try self.throwLastError(source: "Certificate chain file")
 			}
 		}
 	}
@@ -563,7 +548,7 @@ public class SSLService : SSLServiceDelegate {
 	/// - Returns: `UnsafeMutablePointer` to the SSL connection.
 	///
 	private func prepareConnection(socket: Socket) throws -> UnsafeMutablePointer<SSL> {
-	
+		
 		// Make sure our context is valid...
 		guard let context = self.context else {
 			
@@ -584,5 +569,18 @@ public class SSLService : SSLServiceDelegate {
 		SSL_set_fd(sslConnect, socket.socketfd)
 		
 		return sslConnect
+	}
+	
+	private func throwLastError(source: String) throws {
+		
+		let err = ERR_get_error()
+		var errorString: String
+		if let errorStr = ERR_reason_error_string(err) {
+			errorString = String(validatingUTF8: errorStr)!
+		} else {
+			errorString = "Could not determine error reason."
+		}
+		let reason = "ERROR: \(source), code: \(err), reason: \(errorString)"
+		throw SSLError.fail(Int(err), reason)
 	}
 }
