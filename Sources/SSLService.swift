@@ -249,13 +249,17 @@ public class SSLService : SSLServiceDelegate {
 	///
 	public func verifyConnection() throws {
 		
+		if self.configuration.caCertificateFile == nil && self.configuration.caCertificateDirPath == nil {
+			return
+		}
+		
 		guard let sslConnect = self.cSSL else {
 			
 			let reason = "ERROR: verifyConnection, code: \(ECONNABORTED), reason: Unable to reference connection)"
 			throw SSLError.fail(Int(ECONNABORTED), reason)
 		}
 		
-		if SSL_get_peer_cert_chain(sslConnect) != nil {
+		if SSL_get_peer_certificate(sslConnect) != nil {
 			
 			if SSL_get_verify_result(sslConnect) != Int(X509_V_OK) {
 				
@@ -334,7 +338,7 @@ public class SSLService : SSLServiceDelegate {
 		// If we don't have a certificate chain file, we require the following...
 		if configuration.certificateChainFilePath == nil {
 			
-			// Need a CA certificate (file or directory)...
+			/*// Need a CA certificate (file or directory)...
 			if configuration.caCertificateFile == nil && configuration.caCertificateDirPath == nil {
 			
 			throw SSLError.fail(Int(ENOENT), "CA Certificate not specified.")
@@ -344,7 +348,7 @@ public class SSLService : SSLServiceDelegate {
 			if configuration.certificateFilePath == nil || configuration.keyFilePath == nil {
 				
 				throw SSLError.fail(Int(ENOENT), "Certificate and/or key file not specified.")
-			}
+			}*/
 		}
 		
 		// Now check if what's specified actually exists...
@@ -476,14 +480,14 @@ public class SSLService : SSLServiceDelegate {
 		
 		// Handle the stuff common to both client and server...
 		SSL_CTX_set_cipher_list(context, "ALL")
-		SSL_CTX_set_verify(context, SSL_VERIFY_PEER, nil)
+		SSL_CTX_set_verify(context, SSL_VERIFY_NONE, nil)
 		SSL_CTX_set_verify_depth(context, DEFAULT_VERIFY_DEPTH)
 		SSL_CTX_set_tlsext_use_srtp(context, "SRTP_AES128_CM_SHA1_80")
 		
 		// Then handle the client/server specific stuff...
 		if !self.isServer {
 			
-			//SSL_CTX_ctrl(context, SSL_CTRL_OPTIONS, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION, nil)
+			SSL_CTX_ctrl(context, SSL_CTRL_OPTIONS, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION, nil)
 		}
 		
 		// Now configure the rest...
