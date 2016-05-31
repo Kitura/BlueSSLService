@@ -68,28 +68,34 @@ Both clients and server require at a minimum the following configuration items:
 
 * Certificate Chain File (`chainFilePath`)
 
+**or,** if using `self-signed` certificates:
+
+* Application certificate (`certificateFilePath`)
+* Private Key file (`keyFilePath`)
+
 **BlueSSLService** provides three ways to create a `Configuration`.  These are:
-- `init(withCACertificateFile caCertificateFile: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String?)` - This API allows you to create a configuration using a self contained `Certificate Authority (CA)` file. This file **must** reside in the same directory as the application. The second parameter is the path to the `Certificate` file to be used by application to establish the connection.  The third parameter is the path to the `Private Key` file used by application corresponding to the `Public Key` in the `Certificate`.
-- `init(withCACertificateDirectory caCertificateDirPath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String?)` - This API allow you to create a configuration using a directory of `Certificate Authority (CA)` files. These `CA` certificates **must** be hashed using the `Certificate Tool` provided by `OpenSSL`. The remaining parameters are identical to the previous API.
-- `init(withChainFilePath chainFilePath: String?)` - This API allow you to create a configuration using single `Certificate Chain File` (see note 2 below).
+- `init(withCACertificate caCertificateFile: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true)` - This API allows you to create a configuration using a self contained `Certificate Authority (CA)` file. This file **must** reside in the same directory as the application. The second parameter is the path to the `Certificate` file to be used by application to establish the connection.  The next parameter is the path to the `Private Key` file used by application corresponding to the `Public Key` in the `Certificate`. If you're using `self-signed certificates`, set the last parameter to true.
+- `init(withCACertificateDirectory caCertificateDirPath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true)` - This API allows you to create a configuration using a directory of `Certificate Authority (CA)` files. These `CA` certificates **must** be hashed using the `Certificate Tool` provided by `OpenSSL`. The following parameters are identical to the previous API.
+- `init(withChainFilePath chainFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true)` - This API allow you to create a configuration using single `Certificate Chain File` (see note 2 below). Set the last parameter to true if the certificates are `self-signed`, otherwise set it to false.
 
 *Note 1:* All `Certificate` and `Private Key` files must be `PEM` format.
 
 *Note 2:* If using a certificate chain file, the certificates must be in `PEM` format and must be sorted starting with the subject's certificate (actual client or server certificate), followed by intermediate `CA` certificates if applicable, and ending at the highest level (root) `CA`.
 
+*Note 3:* For the first two versions of the API, if your `Private key` is included in your certificate file, you can omit this parameter and the API will use the same file name as specified for the certificate file.
+
 #### Example
 
-The following illustrates creating a configuration using the second form of the API above using certificate file as the key file and not supplying a certificate chain file:
+The following illustrates creating a configuration using the second form of the API above using a self-signef certificate file as the key file and not supplying a certificate chain file:
 ```swift
 import SSLService
 
 ...
 
-let caDirPath = "/opt/myApp/config/myCertificates"
 let myCertPath = "/opt/myApp/config/myCertificate.pem"
 let myKeyPath = "/opt/myApp/config/myKeyFile.pem"
 
-let myConfig = SSLService.Configuration(withCACertificateDirectory: caDirPath, usingCertificateFile: myCertPath, withKeyFile: myKeyFile)
+let myConfig = SSLService.Configuration(withCACertificateDirectory: nil, usingCertificateFile: myCertPath, withKeyFile: myKeyFile)
 
 ...
 
@@ -111,11 +117,10 @@ import SSLService
 ...
 
 // Create the configuration...
-let caDirPath = "/opt/myApp/config/myCACertificates"
 let myCertPath = "/opt/myApp/config/myCertificate.pem"
 let myKeyPath = "/opt/myApp/config/myKeyFile.pem"
 
-let myConfig = SSLService.Configuration(withCACertificateDirectory: caDirPath, usingCertificateFile: myCertPath, withKeyFile: myKeyFile)
+let myConfig = SSLService.Configuration(withCACertificateDirectory: nil, usingCertificateFile: myCertPath, withKeyFile: myKeyFile)
 
 // Create the socket...
 var socket = try Socket.create()

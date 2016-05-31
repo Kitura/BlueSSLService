@@ -60,6 +60,9 @@ public class SSLService : SSLServiceDelegate {
 		/// Path to the certificate chain file (optional).
 		public private(set) var certificateChainFilePath: String? = nil
 		
+		/// True if using `self-signed` certificates.
+		public private(set) var certsAreSelfSigned = false
+		
 		// MARK: Lifecycle
 		
 		///
@@ -70,15 +73,17 @@ public class SSLService : SSLServiceDelegate {
 		/// - Parameters:
 		///		- caCertificateFile:		Name of the PEM formatted CA certificate file. *(see note above)*
 		///		- certificateFilePath:		Path to the PEM formatted certificate file.
-		///		- keyFilePath:				Path to the PEM formatted key file.
+		///		- keyFilePath:				Path to the PEM formatted key file. If nil, `certificateFilePath` will be used.
+		///		- selfSigned:				True if certs are `self-signed`, false otherwise. Defaults to true.
 		///
 		///	- Returns:	New Configuration instance.
 		///
-		public init(withCACertificate caCertificateFile: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String?) {
+		public init(withCACertificate caCertificateFile: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true) {
 			
-			self.caCertificateFile = caCertificateFile
 			self.certificateFilePath = certificateFilePath
-			self.keyFilePath = keyFilePath
+			self.keyFilePath = keyFilePath ?? certificateFilePath
+			self.certsAreSelfSigned = selfSigned
+			self.caCertificateFile = caCertificateFile
 		}
 		
 		///
@@ -88,16 +93,18 @@ public class SSLService : SSLServiceDelegate {
 		///
 		/// - Parameters:
 		///		- caCertificateDirPath:		Path to a directory containing CA certificates. *(see note above)*
-		///		- certificateFilePath:		Path to the PEM formatted certificate file.
+		///		- certificateFilePath:		Path to the PEM formatted certificate file. If nil, `certificateFilePath` will be used.
 		///		- keyFilePath:				Path to the PEM formatted key file (optional). If nil, `certificateFilePath` is used.
+		///		- selfSigned:				True if certs are `self-signed`, false otherwise. Defaults to true.
 		///
 		///	- Returns:	New Configuration instance.
 		///
-		public init(withCACertificateDirectory caCertificateDirPath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String?) {
+		public init(withCACertificateDirectory caCertificateDirPath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true) {
 			
-			self.caCertificateDirPath = caCertificateDirPath
 			self.certificateFilePath = certificateFilePath
-			self.keyFilePath = keyFilePath
+			self.keyFilePath = keyFilePath ?? certificateFilePath
+			self.certsAreSelfSigned = selfSigned
+			self.caCertificateDirPath = caCertificateDirPath
 		}
 		
 		///
@@ -105,13 +112,16 @@ public class SSLService : SSLServiceDelegate {
 		///
 		/// *Note:* If using a certificate chain file, the certificates must be in PEM format and must be sorted starting with the subject's certificate (actual client or server certificate), followed by intermediate CA certificates if applicable, and ending at the highest level (root) CA.
 		///
-		/// - Parameter chainFilePath:		Path to the certificate chain file (optional). *(see note above)*
+		/// - Parameters:
+		///		- chainFilePath:			Path to the certificate chain file (optional). *(see note above)*
+		///		- selfSigned:				True if certs are `self-signed`, false otherwise. Defaults to true.
 		///
 		///	- Returns:	New Configuration instance.
 		///
-		public init(withChainFilePath chainFilePath: String? = nil) {
+		public init(withChainFilePath chainFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true) {
 			
 			self.certificateChainFilePath = chainFilePath
+			self.certsAreSelfSigned = selfSigned
 		}
 	}
 	
@@ -248,8 +258,9 @@ public class SSLService : SSLServiceDelegate {
 	/// Do connection verification
 	///
 	public func verifyConnection() throws {
-		
-		if self.configuration.caCertificateFile == nil && self.configuration.caCertificateDirPath == nil {
+
+		// Skip the verification if we're using self-signed certs...
+		if self.configuration.certsAreSelfSigned {
 			return
 		}
 		
@@ -335,21 +346,33 @@ public class SSLService : SSLServiceDelegate {
 	///
 	private func validate(configuration: Configuration) throws {
 		
-		// If we don't have a certificate chain file, we require the following...
-		if configuration.certificateChainFilePath == nil {
+		// If we're using self-signed certs, we only require a certificate and key...
+		if configuration.certsAreSelfSigned {
 			
-			/*// Need a CA certificate (file or directory)...
-			if configuration.caCertificateFile == nil && configuration.caCertificateDirPath == nil {
-			
-			throw SSLError.fail(Int(ENOENT), "CA Certificate not specified.")
-			}
-			
-			// Also need a certificate file and key file...
 			if configuration.certificateFilePath == nil || configuration.keyFilePath == nil {
 				
 				throw SSLError.fail(Int(ENOENT), "Certificate and/or key file not specified.")
-			}*/
+			}
+			
+		} else {
+			
+			// If we don't have a certificate chain file, we require the following...
+			if configuration.certificateChainFilePath == nil {
+				
+				// Need a CA certificate (file or directory)...
+				if configuration.caCertificateFile == nil && configuration.caCertificateDirPath == nil {
+					
+					throw SSLError.fail(Int(ENOENT), "CA Certificate not specified.")
+				}
+				
+				// Also need a certificate file and key file...
+				if configuration.certificateFilePath == nil || configuration.keyFilePath == nil {
+					
+					throw SSLError.fail(Int(ENOENT), "Certificate and/or key file not specified.")
+				}
+			}
 		}
+		
 		
 		// Now check if what's specified actually exists...
 		#if os(Linux)
@@ -480,9 +503,12 @@ public class SSLService : SSLServiceDelegate {
 		
 		// Handle the stuff common to both client and server...
 		SSL_CTX_set_cipher_list(context, "ALL")
-		SSL_CTX_set_verify(context, SSL_VERIFY_NONE, nil)
+		if self.configuration.certsAreSelfSigned {
+			SSL_CTX_set_verify(context, SSL_VERIFY_NONE, nil)
+		} else {
+			SSL_CTX_set_verify(context, SSL_VERIFY_PEER, nil)
+		}
 		SSL_CTX_set_verify_depth(context, DEFAULT_VERIFY_DEPTH)
-		SSL_CTX_set_tlsext_use_srtp(context, "SRTP_AES128_CM_SHA1_80")
 		
 		// Then handle the client/server specific stuff...
 		if !self.isServer {
