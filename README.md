@@ -10,18 +10,19 @@ SSL Add-on framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.gi
 ## Prerequisites
 
 ### Swift
-* Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-05-09-a` toolchain
+* Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-05-09-a` toolchain *or*
+* Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-05-31-a` toolchain (*Recommended*)
 
 ### OS X
 
 * OS X 10.11.0 (*El Capitan*) or higher
-* Xcode Version 7.3.1 (7D1012) or higher the above toolchain (*Recommended*)
+* Xcode Version 7.3.1 (7D1012) or higher and one of the above toolchains (*Recommended*)
 * OpenSSL: openssl-1.0.2g or higher.  Available via `brew install openssl`.
 
 ### Linux
 
 * Ubuntu 15.10 (or 14.04 but only tested on 15.10)
-* The Swift Open Source toolchain listed above
+* One of the Swift Open Source toolchains listed above
 * OpenSSL is provided by the distribution
 
 ### Package Dependencies
@@ -74,7 +75,7 @@ Both clients and server require at a minimum the following configuration items:
 * Private Key file (`keyFilePath`)
 
 **BlueSSLService** provides three ways to create a `Configuration`.  These are:
-- `init(withCACertificate caCertificateFile: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true)` - This API allows you to create a configuration using a self contained `Certificate Authority (CA)` file. This file **must** reside in the same directory as the application. The second parameter is the path to the `Certificate` file to be used by application to establish the connection.  The next parameter is the path to the `Private Key` file used by application corresponding to the `Public Key` in the `Certificate`. If you're using `self-signed certificates`, set the last parameter to true.
+- `init(withCACertificatePath caCertificateFilePath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true)` - This API allows you to create a configuration using a self contained `Certificate Authority (CA)` file. The second parameter is the path to the `Certificate` file to be used by application to establish the connection.  The next parameter is the path to the `Private Key` file used by application corresponding to the `Public Key` in the `Certificate`. If you're using `self-signed certificates`, set the last parameter to true.
 - `init(withCACertificateDirectory caCertificateDirPath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true)` - This API allows you to create a configuration using a directory of `Certificate Authority (CA)` files. These `CA` certificates **must** be hashed using the `Certificate Tool` provided by `OpenSSL`. The following parameters are identical to the previous API.
 - `init(withChainFilePath chainFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true)` - This API allow you to create a configuration using single `Certificate Chain File` (see note 2 below). Set the last parameter to true if the certificates are `self-signed`, otherwise set it to false.
 

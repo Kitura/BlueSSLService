@@ -32,7 +32,7 @@ public class SSLService : SSLServiceDelegate {
 	
 	// MARK: Constants
 	
-	let DEFAULT_VERIFY_DEPTH: Int32				= 4
+	let DEFAULT_VERIFY_DEPTH: Int32				= 2
 	
 	// MARK: Configuration
 	
@@ -44,8 +44,7 @@ public class SSLService : SSLServiceDelegate {
 		// MARK: Properties
 		
 		/// File name of CA certificate to be used.
-		///	*Note:* `caCertificateFile` **must** reside in the same directory as the application.
-		public private(set) var caCertificateFile: String? = nil
+		public private(set) var caCertificateFilePath: String? = nil
 		
 		/// Path to directory containing hashed CA's to be used.
 		///	*Note:* `caCertificateDirPath` - All certificates in the specified directory **must** be hashed.
@@ -68,22 +67,20 @@ public class SSLService : SSLServiceDelegate {
 		///
 		/// Initialize a configuration using a `CA Certificate` file.
 		///
-		///	*Note:* `caCertificateFile` **must** reside in the **same** directory as the application.
-		///
 		/// - Parameters:
-		///		- caCertificateFile:		Name of the PEM formatted CA certificate file. *(see note above)*
+		///		- caCertificateFilePath:	Path to the PEM formatted CA certificate file.
 		///		- certificateFilePath:		Path to the PEM formatted certificate file.
 		///		- keyFilePath:				Path to the PEM formatted key file. If nil, `certificateFilePath` will be used.
 		///		- selfSigned:				True if certs are `self-signed`, false otherwise. Defaults to true.
 		///
 		///	- Returns:	New Configuration instance.
 		///
-		public init(withCACertificate caCertificateFile: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true) {
+		public init(withCACertificateFilePath caCertificateFilePath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true) {
 			
 			self.certificateFilePath = certificateFilePath
 			self.keyFilePath = keyFilePath ?? certificateFilePath
 			self.certsAreSelfSigned = selfSigned
-			self.caCertificateFile = caCertificateFile
+			self.caCertificateFilePath = caCertificateFilePath
 		}
 		
 		///
@@ -259,8 +256,8 @@ public class SSLService : SSLServiceDelegate {
 	///
 	public func verifyConnection() throws {
 
-		// Skip the verification if we're using self-signed certs...
-		if self.configuration.certsAreSelfSigned {
+		// Skip the verification if we're using self-signed certs and we're a server...
+		if self.configuration.certsAreSelfSigned && self.isServer {
 			return
 		}
 		
@@ -272,13 +269,22 @@ public class SSLService : SSLServiceDelegate {
 		
 		if SSL_get_peer_certificate(sslConnect) != nil {
 			
-			if SSL_get_verify_result(sslConnect) != Int(X509_V_OK) {
+			let rc = SSL_get_verify_result(sslConnect)
+			switch rc {
 				
-				let reason = "ERROR: verifyConnection, code: \(EFAULT), reason: Peer certificate failed verification."
-				throw SSLError.fail(Int(EFAULT), reason)
+			case Int(X509_V_OK):
+				return
+			case Int(X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT), Int(X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY):
+				if self.configuration.certsAreSelfSigned {
+					return
+				}
+			default:
+				break
 			}
-			
-			// Note: if here, connection has been verified.
+
+			// If we're here, we've got an error...
+			let reason = "ERROR: verifyConnection, code: \(rc), reason: Peer certificate was not presented."
+			throw SSLError.fail(Int(ECONNABORTED), reason)
 			
 		} else {
 			
@@ -360,7 +366,7 @@ public class SSLService : SSLServiceDelegate {
 			if configuration.certificateChainFilePath == nil {
 				
 				// Need a CA certificate (file or directory)...
-				if configuration.caCertificateFile == nil && configuration.caCertificateDirPath == nil {
+				if configuration.caCertificateFilePath == nil && configuration.caCertificateDirPath == nil {
 					
 					throw SSLError.fail(Int(ENOENT), "CA Certificate not specified.")
 				}
@@ -378,10 +384,9 @@ public class SSLService : SSLServiceDelegate {
 		#if os(Linux)
 			// See if we've got everything...
 			//	- First the CA...
-			if let caFile = configuration.caCertificateFile {
+			if let caFile = configuration.caCertificateFilePath {
 				
-				let path = "./\(caFile)"
-				if !NSFileManager.defaultManager().fileExists(atPath: path) {
+				if !NSFileManager.defaultManager().fileExists(atPath: caFile) {
 					
 					throw SSLError.fail(Int(ENOENT), "CA Certificate doesn't exist in current directory.")
 				}
@@ -429,10 +434,9 @@ public class SSLService : SSLServiceDelegate {
 		#else
 			// See if we've got everything...
 			//	- First the CA...
-			if let caFile = configuration.caCertificateFile {
+			if let caFile = configuration.caCertificateFilePath {
 				
-				let path = "./\(caFile)"
-				if !NSFileManager.default().fileExists(atPath: path) {
+				if !NSFileManager.default().fileExists(atPath: caFile) {
 					
 					throw SSLError.fail(Int(ENOENT), "CA Certificate doesn't exist in current directory.")
 				}
@@ -520,9 +524,9 @@ public class SSLService : SSLServiceDelegate {
 		//	Note: We've already verified the configuration, so we've at least got the minimum requirements.
 		// 	- First process the CA certificate(s) if any...
 		var rc: Int32 = 0
-		if configuration.caCertificateFile != nil || configuration.caCertificateDirPath != nil {
+		if configuration.caCertificateFilePath != nil || configuration.caCertificateDirPath != nil {
 			
-			let caFile = self.configuration.caCertificateFile
+			let caFile = self.configuration.caCertificateFilePath
 			let caPath = self.configuration.caCertificateDirPath
 			
 			rc = SSL_CTX_load_verify_locations(context, caFile, caPath)
