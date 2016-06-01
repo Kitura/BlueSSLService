@@ -27,7 +27,7 @@ SSL Add-on framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.gi
 
 ### Package Dependencies
 
-* BlueSocket v0.15.6 or higher
+* BlueSocket v0.5.17 or higher
 * OpenSSL-OSX v0.2.4 or higher for OS X
 * OpenSSL v0.2.0 or higher for Linux
 
@@ -69,7 +69,7 @@ Both clients and server require at a minimum the following configuration items:
 
 * Certificate Chain File (`chainFilePath`)
 
-**or,** if using `self-signed` certificates:
+**or**, if using `self-signed` certificates:
 
 * Application certificate (`certificateFilePath`)
 * Private Key file (`keyFilePath`)
@@ -87,7 +87,7 @@ Both clients and server require at a minimum the following configuration items:
 
 #### Example
 
-The following illustrates creating a configuration using the second form of the API above using a self-signef certificate file as the key file and not supplying a certificate chain file:
+The following illustrates creating a configuration using the second form of the API above using a self-signed certificate file as the key file and not supplying a certificate chain file:
 ```swift
 import SSLService
 
