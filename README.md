@@ -85,9 +85,11 @@ Both clients and server require at a minimum the following configuration items:
 
 *Note 3:* For the first two versions of the API, if your `Private key` is included in your certificate file, you can omit this parameter and the API will use the same file name as specified for the certificate file.
 
+*Note 4:* If you desire to customize the cipher suite used, you can do so by setting the `cipherSuite` member after creating the configuration.  The default value if not changed is set to `ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL`. See the example below.
+
 #### Example
 
-The following illustrates creating a configuration using the second form of the API above using a self-signed certificate file as the key file and not supplying a certificate chain file:
+The following illustrates creating a configuration using the second form of the API above using a self-signed certificate file as the key file and not supplying a certificate chain file.  It also illustrates setting the cipher suite to `ALL` from the default:
 ```swift
 import SSLService
 
@@ -97,6 +99,8 @@ let myCertPath = "/opt/myApp/config/myCertificate.pem"
 let myKeyPath = "/opt/myApp/config/myKeyFile.pem"
 
 let myConfig = SSLService.Configuration(withCACertificateDirectory: nil, usingCertificateFile: myCertPath, withKeyFile: myKeyFile)
+
+myConfig.cipherSuite = "ALL"
 
 ...
 

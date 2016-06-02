@@ -62,6 +62,9 @@ public class SSLService : SSLServiceDelegate {
 		/// True if using `self-signed` certificates.
 		public private(set) var certsAreSelfSigned = false
 		
+		/// Cipher suite to use. Defaults to `ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL`
+		public var cipherSuite: String = "ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL"
+		
 		// MARK: Lifecycle
 		
 		///
@@ -506,7 +509,7 @@ public class SSLService : SSLServiceDelegate {
 		}
 		
 		// Handle the stuff common to both client and server...
-		SSL_CTX_set_cipher_list(context, "ALL")
+		SSL_CTX_set_cipher_list(context, self.configuration.cipherSuite)
 		if self.configuration.certsAreSelfSigned {
 			SSL_CTX_set_verify(context, SSL_VERIFY_NONE, nil)
 		} else {
