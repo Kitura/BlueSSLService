@@ -11,7 +11,8 @@ SSL Add-on framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.gi
 
 ### Swift
 * Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-05-09-a` toolchain *or*
-* Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-05-31-a` toolchain (*Recommended*)
+* Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-05-31-a` toolchain *or*
+* Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-06-06-a` toolchain (*Recommended*)
 
 ### OS X
 
