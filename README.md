@@ -10,25 +10,23 @@ SSL Add-on framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.gi
 ## Prerequisites
 
 ### Swift
-* Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-05-09-a` toolchain *or*
-* Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-05-31-a` toolchain *or*
-* Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-06-06-a` toolchain (*Recommended*)
+* Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-06-20-a` toolchain (**Minimum REQUIRED for latest release**)
 
 ### OS X
 
 * OS X 10.11.0 (*El Capitan*) or higher
-* Xcode Version 7.3.1 (7D1012) or higher and one of the above toolchains (*Recommended*)
+* Xcode Version 8.0 beta (8S128d) or higher using the above toolchain (*Recommended*)
 * OpenSSL: openssl-1.0.2g or higher.  Available via `brew install openssl`.
 
 ### Linux
 
 * Ubuntu 15.10 (or 14.04 but only tested on 15.10)
-* One of the Swift Open Source toolchains listed above
+* The Swift Open Source toolchain listed above
 * OpenSSL is provided by the distribution
 
 ### Package Dependencies
 
-* BlueSocket v0.5.17 or higher
+* BlueSocket v0.6.0 or higher
 * OpenSSL-OSX v0.2.4 or higher for OS X
 * OpenSSL v0.2.0 or higher for Linux
 
