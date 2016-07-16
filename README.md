@@ -1,7 +1,7 @@
 # BlueSSLService
 
 ## Overview
-SSL Add-on framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.git) in Swift using the Swift Package Manager. Works on OS X and Linux.
+SSL Add-on framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.git) in Swift using the Swift Package Manager. Works on macOS and Linux.
 
 ## Contents
 
@@ -12,9 +12,9 @@ SSL Add-on framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.gi
 ### Swift
 * Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-06-20-a` toolchain (**Minimum REQUIRED for latest release**)
 
-### OS X
+### macOS
 
-* OS X 10.11.0 (*El Capitan*) or higher
+* macOS 10.11.0 (*El Capitan*) or higher
 * Xcode Version 8.0 beta (8S128d) or higher using the above toolchain (*Recommended*)
 * OpenSSL: openssl-1.0.2g or higher.  Available via `brew install openssl`.
 
@@ -27,14 +27,14 @@ SSL Add-on framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.gi
 ### Package Dependencies
 
 * BlueSocket v0.6.0 or higher
-* OpenSSL-OSX v0.2.4 or higher for OS X
+* OpenSSL-OSX v0.2.4 or higher for macOS
 * OpenSSL v0.2.0 or higher for Linux
 
 *Note:* See `Package.swift` for details.
 
 ## Build
 
-To build `SSLService` from the command line on OS X (assuming OpenSSL installed using `brew`):
+To build `SSLService` from the command line on macOS (assuming OpenSSL installed using `brew`):
 
 ```
 % cd <path-to-clone>
