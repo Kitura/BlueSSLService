@@ -389,56 +389,6 @@ public class SSLService : SSLServiceDelegate {
 			//	- First the CA...
 			if let caFile = configuration.caCertificateFilePath {
 				
-				if !NSFileManager.defaultManager().fileExists(atPath: caFile) {
-					
-					throw SSLError.fail(Int(ENOENT), "CA Certificate doesn't exist in current directory.")
-				}
-			}
-			
-			if let caPath = configuration.caCertificateDirPath {
-				
-				var isDir: ObjCBool = false
-				if !NSFileManager.defaultManager().fileExists(atPath: caPath, isDirectory: &isDir) {
-					
-					throw SSLError.fail(Int(ENOENT), "CA Certificate directory path doesn't exist.")
-				}
-				if !isDir {
-					
-					throw SSLError.fail(Int(ENOENT), "CA Certificate directory path doesn't specify a directory.")
-				}
-			}
-			
-			//	- Then the certificate file...
-			if let certFilePath = configuration.certificateFilePath {
-				
-				if !NSFileManager.defaultManager().fileExists(atPath: certFilePath) {
-					
-					throw SSLError.fail(Int(ENOENT), "Certificate doesn't exist at specified path.")
-				}
-			}
-			
-			//	- Now the key file...
-			if let keyFilePath = configuration.keyFilePath {
-				
-				if !NSFileManager.defaultManager().fileExists(atPath: keyFilePath) {
-					
-					throw SSLError.fail(Int(ENOENT), "Key file doesn't exist at specified path.")
-				}
-			}
-			
-			//	- Finally, if present, the certificate chain path...
-			if let chainPath = configuration.certificateChainFilePath {
-				
-				if !NSFileManager.defaultManager().fileExists(atPath: chainPath) {
-					
-					throw SSLError.fail(Int(ENOENT), "Certificate chain doesn't exist at specified path.")
-				}
-			}
-		#else
-			// See if we've got everything...
-			//	- First the CA...
-			if let caFile = configuration.caCertificateFilePath {
-				
 				if !FileManager.default().fileExists(atPath: caFile) {
 					
 					throw SSLError.fail(Int(ENOENT), "CA Certificate doesn't exist in current directory.")
@@ -480,6 +430,56 @@ public class SSLService : SSLServiceDelegate {
 			if let chainPath = configuration.certificateChainFilePath {
 				
 				if !FileManager.default().fileExists(atPath: chainPath) {
+					
+					throw SSLError.fail(Int(ENOENT), "Certificate chain doesn't exist at specified path.")
+				}
+			}
+		#else
+			// See if we've got everything...
+			//	- First the CA...
+			if let caFile = configuration.caCertificateFilePath {
+				
+				if !FileManager.default.fileExists(atPath: caFile) {
+					
+					throw SSLError.fail(Int(ENOENT), "CA Certificate doesn't exist in current directory.")
+				}
+			}
+			
+			if let caPath = configuration.caCertificateDirPath {
+				
+				var isDir: ObjCBool = false
+				if !FileManager.default.fileExists(atPath: caPath, isDirectory: &isDir) {
+					
+					throw SSLError.fail(Int(ENOENT), "CA Certificate directory path doesn't exist.")
+				}
+				if !isDir.boolValue {
+					
+					throw SSLError.fail(Int(ENOENT), "CA Certificate directory path doesn't specify a directory.")
+				}
+			}
+			
+			//	- Then the certificate file...
+			if let certFilePath = configuration.certificateFilePath {
+				
+				if !FileManager.default.fileExists(atPath: certFilePath) {
+					
+					throw SSLError.fail(Int(ENOENT), "Certificate doesn't exist at specified path.")
+				}
+			}
+			
+			//	- Now the key file...
+			if let keyFilePath = configuration.keyFilePath {
+				
+				if !FileManager.default.fileExists(atPath: keyFilePath) {
+					
+					throw SSLError.fail(Int(ENOENT), "Key file doesn't exist at specified path.")
+				}
+			}
+			
+			//	- Finally, if present, the certificate chain path...
+			if let chainPath = configuration.certificateChainFilePath {
+				
+				if !FileManager.default.fileExists(atPath: chainPath) {
 					
 					throw SSLError.fail(Int(ENOENT), "Certificate chain doesn't exist at specified path.")
 				}

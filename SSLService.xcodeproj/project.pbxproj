@@ -288,6 +288,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = __PBXFileRef_SSLService.xcodeproj/Configs/Project.xcconfig /* Project.xcconfig */;
 			buildSettings = {
+				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};
@@ -295,6 +296,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = __PBXFileRef_SSLService.xcodeproj/Configs/Project.xcconfig /* Project.xcconfig */;
 			buildSettings = {
+				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
