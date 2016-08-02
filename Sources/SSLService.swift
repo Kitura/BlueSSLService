@@ -305,7 +305,7 @@ public class SSLService : SSLServiceDelegate {
 	///
 	///	- Returns the number of bytes written. Zero indicates SSL shutdown, less than zero indicates error.
 	///
-	public func send(buffer: UnsafePointer<Void>!, bufSize: Int) throws -> Int {
+	public func send(buffer: UnsafeRawPointer!, bufSize: Int) throws -> Int {
 		
 		guard let sslConnect = self.cSSL else {
 			
