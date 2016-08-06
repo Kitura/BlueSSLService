@@ -18,7 +18,7 @@ SSL Add-on framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.gi
 ### macOS
 
 * macOS 10.11.6 (*El Capitan*) or higher
-* Xcode Version 8.0 beta 3 (8S174q) or higher using the above toolchain (*Recommended*)
+* Xcode Version 8.0 beta 4 (8S188o) or higher using the above toolchain (*Recommended*)
 * OpenSSL: openssl-1.0.2g or higher.  Available via `brew install openssl`.
 
 ### Linux
