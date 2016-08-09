@@ -169,6 +169,20 @@ public class SSLService : SSLServiceDelegate {
 		try self.validate(configuration: config)
 	}
 	
+	///
+	/// Clone an existing instance of SSLService.
+	///
+	private init?(with source: SSLService) throws {
+		
+		self.configuration = source.configuration
+
+		// Validate the config...
+		try self.validate(configuration: source.configuration)
+		
+		// Initialize as client...
+		try self.initialize(isServer: true)
+	}
+	
 	
 	// MARK: SSLServiceDelegate Protocol
 	
@@ -228,14 +242,26 @@ public class SSLService : SSLServiceDelegate {
 	///
 	public func onAccept(socket: Socket) throws {
 		
-		// Prepare the connection...
-		let sslConnect = try prepareConnection(socket: socket)
-		
-		// Start the handshake...
-		let rc = SSL_accept(sslConnect)
-		if rc <= 0 {
+		// If the new socket doesn't have a delegate, create one using self...
+		if socket.delegate == nil {
 			
-			try self.throwLastError(source: "SSL_accept")
+			let delegate = try SSLService(with: self)
+			socket.delegate = delegate
+			try socket.delegate?.onAccept(socket: socket)
+			
+		} else {
+		
+			// Prepare the connection...
+			let sslConnect = try prepareConnection(socket: socket)
+			
+			// Start the handshake...
+			let rc = SSL_accept(sslConnect)
+			if rc <= 0 {
+				
+				try self.throwLastError(source: "SSL_accept")
+			}
+			
+			try self.verifyConnection()
 		}
 	}
 	
@@ -255,48 +281,9 @@ public class SSLService : SSLServiceDelegate {
 			
 			try self.throwLastError(source: "SSL_connect")
 		}
-	}
-	
-	///
-	/// Do connection verification
-	///
-	public func verifyConnection() throws {
-
-		// Skip the verification if we're using self-signed certs and we're a server...
-		if self.configuration.certsAreSelfSigned && self.isServer {
-			return
-		}
 		
-		guard let sslConnect = self.cSSL else {
-			
-			let reason = "ERROR: verifyConnection, code: \(ECONNABORTED), reason: Unable to reference connection)"
-			throw SSLError.fail(Int(ECONNABORTED), reason)
-		}
-		
-		if SSL_get_peer_certificate(sslConnect) != nil {
-			
-			let rc = SSL_get_verify_result(sslConnect)
-			switch rc {
-				
-			case Int(X509_V_OK):
-				return
-			case Int(X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT), Int(X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY):
-				if self.configuration.certsAreSelfSigned {
-					return
-				}
-			default:
-				break
-			}
-
-			// If we're here, we've got an error...
-			let reason = "ERROR: verifyConnection, code: \(rc), reason: Peer certificate was not presented."
-			throw SSLError.fail(Int(ECONNABORTED), reason)
-			
-		} else {
-			
-			let reason = "ERROR: verifyConnection, code: \(ECONNABORTED), reason: Peer certificate was not presented."
-			throw SSLError.fail(Int(ECONNABORTED), reason)
-		}
+		// Verify the connection...
+		try self.verifyConnection()
 	}
 	
 	///
@@ -566,6 +553,53 @@ public class SSLService : SSLServiceDelegate {
 		return sslConnect
 	}
 	
+	///
+	/// Do connection verification
+	///
+	private func verifyConnection() throws {
+		
+		// Skip the verification if we're using self-signed certs and we're a server...
+		if self.configuration.certsAreSelfSigned && self.isServer {
+			return
+		}
+		
+		guard let sslConnect = self.cSSL else {
+			
+			let reason = "ERROR: verifyConnection, code: \(ECONNABORTED), reason: Unable to reference connection)"
+			throw SSLError.fail(Int(ECONNABORTED), reason)
+		}
+		
+		if SSL_get_peer_certificate(sslConnect) != nil {
+			
+			let rc = SSL_get_verify_result(sslConnect)
+			switch rc {
+				
+			case Int(X509_V_OK):
+				return
+			case Int(X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT), Int(X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY):
+				if self.configuration.certsAreSelfSigned {
+					return
+				}
+			default:
+				break
+			}
+			
+			// If we're here, we've got an error...
+			let reason = "ERROR: verifyConnection, code: \(rc), reason: Peer certificate was not presented."
+			throw SSLError.fail(Int(ECONNABORTED), reason)
+			
+		} else {
+			
+			let reason = "ERROR: verifyConnection, code: \(ECONNABORTED), reason: Peer certificate was not presented."
+			throw SSLError.fail(Int(ECONNABORTED), reason)
+		}
+	}
+	
+	///
+	/// Throws the last error encountered.
+	///
+	/// - Parameter source: The string describing the error.
+	///
 	private func throwLastError(source: String) throws {
 		
 		let err = ERR_get_error()
