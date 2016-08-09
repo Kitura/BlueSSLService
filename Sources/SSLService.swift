@@ -65,6 +65,9 @@ public class SSLService : SSLServiceDelegate {
 		/// Cipher suite to use. Defaults to `ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL`
 		public var cipherSuite: String = "ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL"
 		
+		/// Password (if needed) typically used for PKCS12 files.
+		public var password: String? = nil
+		
 		// MARK: Lifecycle
 		
 		///
