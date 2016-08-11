@@ -23,10 +23,10 @@ import PackageDescription
 	let url = "https://github.com/IBM-Swift/OpenSSL.git"
 	let majorVersion = 0
 	let minorVersion = 2
-#elseif os(OSX)
+#elseif os(macOS)
 	let url = "https://github.com/IBM-Swift/OpenSSL-OSX.git"
 	let majorVersion = 0
-	let minorVersion = 2
+	let minorVersion = 3
 #else
 	fatalError("Unsupported OS")
 #endif
