@@ -30,6 +30,10 @@ import OpenSSL
 ///
 public class SSLService : SSLServiceDelegate {
 	
+	// MARK: Statics
+	
+	static var openSSLInitialized: Bool 		= false
+	
 	// MARK: Constants
 	
 	let DEFAULT_VERIFY_DEPTH: Int32				= 2
@@ -179,7 +183,7 @@ public class SSLService : SSLServiceDelegate {
 		// Validate the config...
 		try self.validate(configuration: source.configuration)
 		
-		// Initialize as client...
+		// Initialize as server...
 		try self.initialize(isServer: true)
 	}
 	
@@ -194,10 +198,13 @@ public class SSLService : SSLServiceDelegate {
 	public func initialize(isServer: Bool) throws {
 		
 		// Common initialization...
-		SSL_library_init()
-		SSL_load_error_strings()
-		OPENSSL_config(nil)
-		OPENSSL_add_all_algorithms_conf()
+		if !SSLService.openSSLInitialized {
+			SSL_library_init()
+			SSL_load_error_strings()
+			OPENSSL_config(nil)
+			OPENSSL_add_all_algorithms_conf()
+			SSLService.openSSLInitialized = true
+		}
 		
 		// Server or client specific method determination...
 		self.isServer = isServer
