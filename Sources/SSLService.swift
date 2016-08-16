@@ -184,7 +184,7 @@ public class SSLService : SSLServiceDelegate {
 		try self.validate(configuration: source.configuration)
 		
 		// Initialize as server...
-		try self.initialize(isServer: true)
+		try self.initialize(asServer: true)
 	}
 	
 	
@@ -193,9 +193,9 @@ public class SSLService : SSLServiceDelegate {
 	///
 	/// Initialize SSL Service
 	///
-	/// - Parameter isServer:	True for initializing a server, otherwise a client.
+	/// - Parameter asServer:	True for initializing a server, otherwise a client.
 	///
-	public func initialize(isServer: Bool) throws {
+	public func initialize(asServer: Bool) throws {
 		
 		// Common initialization...
 		if !SSLService.openSSLInitialized {
@@ -207,7 +207,7 @@ public class SSLService : SSLServiceDelegate {
 		}
 		
 		// Server or client specific method determination...
-		self.isServer = isServer
+		self.isServer = asServer
 		if isServer {
 			
 			self.method = SSLv23_server_method()
