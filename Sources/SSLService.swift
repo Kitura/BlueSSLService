@@ -327,7 +327,7 @@ public class SSLService : SSLServiceDelegate {
 	///
 	///	- Returns the number of bytes read. Zero indicates SSL shutdown, less than zero indicates error.
 	///
-	public func recv(buffer: UnsafeMutablePointer<Void>!, bufSize: Int) throws -> Int {
+	public func recv(buffer: UnsafeMutableRawPointer, bufSize: Int) throws -> Int {
 		
 		guard let sslConnect = self.cSSL else {
 			

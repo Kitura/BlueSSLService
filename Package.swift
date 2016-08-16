@@ -36,7 +36,7 @@ let package = Package(
 	targets: [Target(name: "SSLService")],
 	dependencies: [
 		.Package(url: url, majorVersion: majorVersion, minor: minorVersion),
-		.Package(url: "https://github.com/IBM-Swift/BlueSocket.git", majorVersion: 0, minor: 8),
+		.Package(url: "https://github.com/IBM-Swift/BlueSocket.git", majorVersion: 0, minor: 9),
 	],
 	exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]
 )
