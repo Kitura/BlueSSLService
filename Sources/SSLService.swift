@@ -32,16 +32,11 @@ public class SSLService : SSLServiceDelegate {
 	
 	// MARK: Statics
 	
-	/// True if OpenSSL was initialized, false otherwise.
-	static var openSSLInitialized: Bool 				= false
-	
-	/// SSL Context
-	static var context: UnsafeMutablePointer<SSL_CTX>?	= nil
-	
+	static var openSSLInitialized: Bool 		= false
 	
 	// MARK: Constants
 	
-	let DEFAULT_VERIFY_DEPTH: Int32						= 2
+	let DEFAULT_VERIFY_DEPTH: Int32				= 2
 	
 	// MARK: Configuration
 	
@@ -156,6 +151,9 @@ public class SSLService : SSLServiceDelegate {
 	/// **Note:** We use `SSLv23` which causes negotiation of the highest available SSL/TLS version.
 	private var method: UnsafePointer<SSL_METHOD>? = nil
 	
+	/// SSL Context
+	private var context: UnsafeMutablePointer<SSL_CTX>? = nil
+	
 	
 	// MARK: Lifecycle
 	
@@ -239,8 +237,8 @@ public class SSLService : SSLServiceDelegate {
 		}
 		
 		// Now the context...
-		if SSLService.context != nil {
-			SSL_CTX_free(SSLService.context!)
+		if self.context != nil {
+			SSL_CTX_free(self.context!)
 		}
 		
 		// Finally, finish cleanup...
@@ -450,11 +448,6 @@ public class SSLService : SSLServiceDelegate {
 	///
 	private func prepareContext() throws {
 		
-		// If we've already got a context, skip this...
-		if SSLService.context != nil {
-			return
-		}
-		
 		// Make sure we've got the method to use...
 		guard let method = self.method else {
 			
@@ -463,9 +456,9 @@ public class SSLService : SSLServiceDelegate {
 		}
 		
 		// Now we can create the context...
-		SSLService.context = SSL_CTX_new(method)
+		self.context = SSL_CTX_new(method)
 		
-		guard let context = SSLService.context else {
+		guard let context = self.context else {
 			
 			let reason = "ERROR: Unable to create SSL context."
 			throw SSLError.fail(Int(ENOMEM), reason)
@@ -550,7 +543,7 @@ public class SSLService : SSLServiceDelegate {
 	private func prepareConnection(socket: Socket) throws -> UnsafeMutablePointer<SSL> {
 		
 		// Make sure our context is valid...
-		guard let context = SSLService.context else {
+		guard let context = self.context else {
 			
 			let reason = "ERROR: Unable to access SSL context."
 			throw SSLError.fail(Int(EFAULT), reason)
