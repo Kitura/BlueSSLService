@@ -5,6 +5,7 @@
 ![](https://img.shields.io/badge/Snapshot-8/18-blue.svg?style=flat)
 ![](https://img.shields.io/badge/Snapshot-8/23-blue.svg?style=flat)
 ![](https://img.shields.io/badge/Snapshot-8/24-blue.svg?style=flat)
+![](https://img.shields.io/badge/Snapshot-8/26-blue.svg?style=flat)
 
 # BlueSSLService
 
@@ -20,7 +21,8 @@ SSL Add-on framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.gi
 ### Swift
 * Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-08-18-a` toolchain (**Minimum REQUIRED for latest release**)
 * Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-08-23-a` toolchain
-* Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-08-24-a` toolchain (**Recommended**)
+* Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-08-24-a` toolchain
+* Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-08-26-a` toolchain (**Recommended**)
 
 ### macOS
 
