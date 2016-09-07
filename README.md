@@ -40,13 +40,7 @@ SSL Add-on framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.gi
 
 ## Build
 
-To build `SSLService` from the command line on macOS (assuming OpenSSL installed using `brew`):
-
-```
-% cd <path-to-clone>
-% swift build -Xcc -I/usr/local/opt/openssl/include
-```
-To build `SSLService` from the command line on Linux:
+To build `SSLService` from the command line:
 
 ```
 % cd <path-to-clone>
