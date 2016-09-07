@@ -187,8 +187,8 @@ public class SSLService : SSLServiceDelegate {
 	
 	#else
 	
-		/// Socket file descriptor pointer
-		public private(set) var socketfdPtr = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
+		/// Socket pointer
+		public private(set) var socketPtr = UnsafeMutablePointer<Socket>.allocate(capacity: 1)
 	
 		/// SSL Context
 		public private(set) var context: SSLContext?
@@ -669,7 +669,7 @@ public class SSLService : SSLServiceDelegate {
 			}
 			
 			//	Note: We've already verified the configuration, so we've at least got the minimum requirements.
-			
+
 			//	- Must have certificate chain path...
 			if let chainPath = configuration.certificateChainFilePath {
 				
@@ -822,8 +822,8 @@ public class SSLService : SSLServiceDelegate {
 		}
 		
 		// Set the socket file descriptor...
-		self.socketfdPtr.pointee = socket.socketfd
-		var status: OSStatus = SSLSetConnection(sslContext, self.socketfdPtr)
+		self.socketPtr.pointee = socket
+		var status: OSStatus = SSLSetConnection(sslContext, self.socketPtr)
 		if status != errSecSuccess {
 			
 			try self.throwLastError(source: "SSLSetConnection", err: status)
@@ -903,6 +903,7 @@ public class SSLService : SSLServiceDelegate {
 	private func throwLastError(source: String, err: OSStatus = 0) throws {
 		
 		var errorString: String
+		
 		#if os(Linux)
 			
 			let err = ERR_get_error()
@@ -921,6 +922,7 @@ public class SSLService : SSLServiceDelegate {
 			}
 			
 		#endif
+		
 		let reason = "ERROR: \(source), code: \(err), reason: \(errorString)"
 		throw SSLError.fail(Int(err), reason)
 	}
@@ -932,7 +934,7 @@ public class SSLService : SSLServiceDelegate {
 	/// SSL Read Callback
 	///
 	/// - Parameters:
-	///		- connection:	The connection to read from.
+	///		- connection:	The connection to read from (contains pointer to active Socket object).
 	///		- data:			The area for the returned data.
 	///		- dataLength:	The amount of data to read.
 	///
@@ -945,42 +947,44 @@ public class SSLService : SSLServiceDelegate {
 		let addr = withUnsafePointer(to: &temp) {
 			return UnsafeRawPointer($0)
 		}
-		let socketfd = addr.assumingMemoryBound(to: Int32.self).pointee
+		let socket = addr.assumingMemoryBound(to: Socket.self).pointee
 		
 		// Now the bytes to read...
 		let bytesRequested = dataLength.pointee
 		
 		// Read the data from the socket...
-		let bytesRead = read(socketfd, data, UnsafePointer<Int>(dataLength).pointee)
-		//print("read \(bytesRead) bytes of \(bytesRequested) from fd=\(socketfd)")
-		if (bytesRead > 0) {
+		let bytesRead = read(socket.socketfd, data, UnsafePointer<Int>(dataLength).pointee)
+		if bytesRead > 0 {
 			
 			dataLength.initialize(to: bytesRead)
 			if bytesRequested > bytesRead {
 				
-				return Int32(errSSLWouldBlock)
+				return OSStatus(errSSLWouldBlock)
 				
 			} else {
 				
 				return noErr
 			}
-		} else if (bytesRead == 0) {
+			
+		} else if bytesRead == 0 {
 			
 			dataLength.initialize(to: 0)
-			return Int32(errSSLClosedGraceful)
+			return OSStatus(errSSLClosedGraceful)
 			
 		} else {
+			
 			dataLength.initialize(to: 0)
-			switch (errno) {
+			
+			switch errno {
 				
 			case ENOENT:
-				return Int32(errSSLClosedGraceful)
+				return OSStatus(errSSLClosedGraceful)
 			case EAGAIN:
-				return Int32(errSSLWouldBlock)
+				return OSStatus(errSSLWouldBlock)
 			case ECONNRESET:
-				return Int32(errSSLClosedAbort)
+				return OSStatus(errSSLClosedAbort)
 			default:
-				return Int32(errSecIO)
+				return OSStatus(errSecIO)
 			}
 			
 		}
@@ -991,7 +995,7 @@ public class SSLService : SSLServiceDelegate {
 	/// SSL Write Callback
 	///
 	/// - Parameters:
-	///		- connection:	The connection to write to.
+	///		- connection:	The connection to write to (contains pointer to active Socket object).
 	///		- data:			The data to be written.
 	///		- dataLength:	The amount of data to be written.
 	///
@@ -1004,18 +1008,17 @@ public class SSLService : SSLServiceDelegate {
 		let addr = withUnsafePointer(to: &temp) {
 			return UnsafeRawPointer($0)
 		}
-		let socketfd = addr.assumingMemoryBound(to: Int32.self).pointee
+		let socket = addr.assumingMemoryBound(to: Socket.self).pointee
 		
 		// Now the bytes to read...
 		let bytesToWrite = dataLength.pointee
 		
 		// Write to the socket...
-		let bytesWritten = write(socketfd, data, UnsafePointer<Int>(dataLength).pointee)
-		//print("wrote \(bytesWritten) of \(bytesToWrite) bytes from fd=\(socketfd)")
-		if (bytesWritten > 0) {
+		let bytesWritten = write(socket.socketfd, data, UnsafePointer<Int>(dataLength).pointee)
+		if bytesWritten > 0 {
 			
 			dataLength.initialize(to: bytesWritten)
-			if (bytesToWrite > bytesWritten) {
+			if bytesToWrite > bytesWritten {
 			
 				return Int32(errSSLWouldBlock)
 				
@@ -1023,21 +1026,23 @@ public class SSLService : SSLServiceDelegate {
 				
 				return noErr
 			}
-		} else if (bytesWritten == 0) {
+			
+		} else if bytesWritten == 0 {
 			
 			dataLength.initialize(to: 0)
-			return Int32(errSSLClosedGraceful)
+			return OSStatus(errSSLClosedGraceful)
 			
 		} else {
 			
 			dataLength.initialize(to: 0)
-			if (EAGAIN == errno) {
 			
-				return Int32(errSSLWouldBlock)
+			if errno == EAGAIN {
+			
+				return OSStatus(errSSLWouldBlock)
 				
 			} else {
 				
-				return Int32(errSecIO)
+				return OSStatus(errSecIO)
 			}
 		}
 	}
