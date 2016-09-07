@@ -318,6 +318,7 @@ public class SSLService : SSLServiceDelegate {
 		if rc < 0 {
 			
 			try self.throwLastError(source: "SSL_write")
+			return 0
 		}
 		return Int(rc)
 	}
@@ -343,6 +344,7 @@ public class SSLService : SSLServiceDelegate {
 		if rc < 0 {
 			
 			try self.throwLastError(source: "SSL_read")
+			return 0
 		}
 		return Int(rc)
 	}
@@ -614,6 +616,11 @@ public class SSLService : SSLServiceDelegate {
 	private func throwLastError(source: String) throws {
 		
 		let err = ERR_get_error()
+		
+		// If we don't get an error back, there's no error so just return...
+		if err == 0 {
+			return
+		}
 		var errorString: String
 		if let errorStr = ERR_reason_error_string(err) {
 			errorString = String(validatingUTF8: errorStr)!
