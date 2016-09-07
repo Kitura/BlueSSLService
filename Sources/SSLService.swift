@@ -393,6 +393,7 @@ public class SSLService : SSLServiceDelegate {
 			if rc < 0 {
 			
 				try self.throwLastError(source: "SSL_write")
+				return 0
 			}
 			return Int(rc)
 		
@@ -444,6 +445,7 @@ public class SSLService : SSLServiceDelegate {
 			if rc < 0 {
 			
 				try self.throwLastError(source: "SSL_read")
+				return 0
 			}
 			return Int(rc)
 		
