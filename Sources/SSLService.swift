@@ -907,6 +907,13 @@ public class SSLService : SSLServiceDelegate {
 		#if os(Linux)
 			
 			let err = ERR_get_error()
+			
+			// Don't throw an error if the err code comes back as a zero...
+			//	- This indicates no error found, so just return...
+			if err == 0 {
+				return
+			}
+			
 			if let errorStr = ERR_reason_error_string(err) {
 				errorString = String(validatingUTF8: errorStr)!
 			} else {
