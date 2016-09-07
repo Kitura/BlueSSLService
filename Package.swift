@@ -33,7 +33,7 @@ import PackageDescription
 		],
 		exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]
 	)
-#elseif os(macOS)
+#elseif os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
 	let package = Package(
 		name: "SSLService",
 		targets: [Target(name: "SSLService")],
