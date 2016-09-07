@@ -23,6 +23,7 @@ SSL Add-on framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.gi
 
 * macOS 10.11.6 (*El Capitan*) or higher
 * Xcode Version 8.0 beta 6 (8S201h) or higher using one of the above toolchains (*Recommended*)
+* Secure Transport is provided by macOS.
 
 ### Linux
 
