@@ -21,7 +21,10 @@
 
 import Foundation
 import Socket
-import OpenSSL
+
+#if os(Linux)
+	import OpenSSL
+#endif
 
 // MARK: SSLService
 
@@ -431,7 +434,7 @@ public class SSLService : SSLServiceDelegate {
 	///		- buffer:		Buffer pointer.
 	///		- bufSize:		Size of the buffer.
 	///
-	///	- Returns the number of bytes read. Zero indicates SSL shutdown, less than zero indicates error.
+	///	- Returns the number of bytes read. Zero indicates SSL shutdown or in the case of a non-blocking socket, no data available for reading, less than zero indicates error.
 	///
 	public func recv(buffer: UnsafeMutableRawPointer, bufSize: Int) throws -> Int {
 		
@@ -903,6 +906,7 @@ public class SSLService : SSLServiceDelegate {
  	///		- source: 	The string describing the error.
 	///		- err:		On `macOS`, the error code, *unused* on `Linux`.
 	///
+	///	- Returns:		Throws an exception.  On `Linux`, however, if `ERR_get_error()` returns a zero (0), this function simply returns indicating no error.
 	///
 	private func throwLastError(source: String, err: OSStatus = 0) throws {
 		
