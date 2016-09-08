@@ -155,7 +155,7 @@ public class SSLService : SSLServiceDelegate {
 		///
 		///	- Returns:	New Configuration instance.
 		///
-		public init(withChainFilePath chainFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true, password: String? = nil) {
+		public init(withChainFilePath chainFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true, withPassword password: String? = nil) {
 			
 			self.certificateChainFilePath = chainFilePath
 			self.certsAreSelfSigned = selfSigned
