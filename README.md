@@ -2,7 +2,7 @@
 ![Linux](https://img.shields.io/badge/os-linux-green.svg?style=flat)
 ![Apache 2](https://img.shields.io/badge/license-Apache2-blue.svg?style=flat)
 ![](https://img.shields.io/badge/Swift-3.0-orange.svg?style=flat)
-![](https://img.shields.io/badge/Snapshot-9/6-blue.svg?style=flat)
+![](https://img.shields.io/badge/Snapshot-9/7-blue.svg?style=flat)
 
 # BlueSSLService
 
@@ -17,12 +17,12 @@ SSL Add-on framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.gi
 
 ### Swift
 * Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-08-18-a` toolchain (**Minimum REQUIRED for latest release**)
-* Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-09-06-a` toolchain (**Recommended**)
+* Swift Open Source `swift-DEVELOPMENT-SNAPSHOT-2016-09-07-a` toolchain (**Recommended**)
 
 ### macOS
 
 * macOS 10.11.6 (*El Capitan*) or higher
-* Xcode Version 8.0 beta 6 (8S201h) or higher using one of the above toolchains (*Recommended*)
+* Xcode Version 8.0 GM (8A218a) or higher using one of the above toolchains (*Recommended*)
 * Secure Transport is provided by macOS.
 
 ### Linux
@@ -73,10 +73,14 @@ Both clients and server require at a minimum the following configuration items:
 * Application certificate (`certificateFilePath`)
 * Private Key file (`keyFilePath`)
 
+**or**, if running on macOS:
+
+* Certificate Chain File (`chainFilePath`) in **PKCS12** format.
+
 **BlueSSLService** provides three ways to create a `Configuration`.  These are:
 - `init(withCACertificatePath caCertificateFilePath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true)` - This API allows you to create a configuration using a self contained `Certificate Authority (CA)` file. The second parameter is the path to the `Certificate` file to be used by application to establish the connection.  The next parameter is the path to the `Private Key` file used by application corresponding to the `Public Key` in the `Certificate`. If you're using `self-signed certificates`, set the last parameter to true.
 - `init(withCACertificateDirectory caCertificateDirPath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true)` - This API allows you to create a configuration using a directory of `Certificate Authority (CA)` files. These `CA` certificates **must** be hashed using the `Certificate Tool` provided by `OpenSSL`. The following parameters are identical to the previous API.
-- `init(withChainFilePath chainFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true)` - This API allow you to create a configuration using single `Certificate Chain File` (see note 2 below). Set the last parameter to true if the certificates are `self-signed`, otherwise set it to false.
+- `init(withChainFilePath chainFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true, password: String? = nil)` - This API allow you to create a configuration using a single `Certificate Chain File` (see note 2 below). Set the second parameter to true if the certificates are `self-signed`, otherwise set it to false. Add an optional password (if required) using the third parameter.
 
 *Note 1:* All `Certificate` and `Private Key` files must be `PEM` format.
 
@@ -85,6 +89,8 @@ Both clients and server require at a minimum the following configuration items:
 *Note 3:* For the first two versions of the API, if your `Private key` is included in your certificate file, you can omit this parameter and the API will use the same file name as specified for the certificate file.
 
 *Note 4:* If you desire to customize the cipher suite used, you can do so by setting the `cipherSuite` member after creating the configuration.  The default value if not changed is set to `ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL`. See the example below.
+
+*Note 5:* If you're running on macOS, you must use the third form of init for the `Configuration` and provide a certificate chain file in `PKCS12` format, supplying a `password` if needed.
 
 #### Example
 
