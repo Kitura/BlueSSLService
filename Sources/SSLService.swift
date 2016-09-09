@@ -192,8 +192,8 @@ public class SSLService : SSLServiceDelegate {
 	
 	#else
 	
-		/// Socket pointer
-		public private(set) var socketPtr = UnsafeMutablePointer<Socket>.allocate(capacity: 1)
+		/// Socket Pointer
+	private var socketPtr: UnsafeRawPointer? = nil
 	
 		/// SSL Context
 		public private(set) var context: SSLContext?
@@ -489,33 +489,45 @@ public class SSLService : SSLServiceDelegate {
 	///
 	private func validate(configuration: Configuration) throws {
 		
-		// If we're using self-signed certs, we only require a certificate and key...
-		if configuration.certsAreSelfSigned {
+		#if os(Linux)
 			
-			if configuration.certificateFilePath == nil || configuration.keyFilePath == nil {
+			// If we're using self-signed certs, we only require a certificate and key...
+			if configuration.certsAreSelfSigned {
 				
-				throw SSLError.fail(Int(ENOENT), "Certificate and/or key file not specified.")
-			}
-			
-		} else {
-			
-			// If we don't have a certificate chain file, we require the following...
-			if configuration.certificateChainFilePath == nil {
-				
-				// Need a CA certificate (file or directory)...
-				if configuration.caCertificateFilePath == nil && configuration.caCertificateDirPath == nil {
-					
-					throw SSLError.fail(Int(ENOENT), "CA Certificate not specified.")
-				}
-				
-				// Also need a certificate file and key file...
 				if configuration.certificateFilePath == nil || configuration.keyFilePath == nil {
 					
 					throw SSLError.fail(Int(ENOENT), "Certificate and/or key file not specified.")
 				}
+				
+			} else {
+				
+				// If we don't have a certificate chain file, we require the following...
+				if configuration.certificateChainFilePath == nil {
+					
+					// Need a CA certificate (file or directory)...
+					if configuration.caCertificateFilePath == nil && configuration.caCertificateDirPath == nil {
+						
+						throw SSLError.fail(Int(ENOENT), "CA Certificate not specified.")
+					}
+					
+					// Also need a certificate file and key file...
+					if configuration.certificateFilePath == nil || configuration.keyFilePath == nil {
+						
+						throw SSLError.fail(Int(ENOENT), "Certificate and/or key file not specified.")
+					}
+				}
 			}
-		}
-		
+			
+		#else
+			
+			// On macOS and friends, we currently only support PKCS12 formatted certificate chain file...
+			//	- Note: This is regardless of whether it's self-signed or not.
+			if configuration.certificateChainFilePath == nil {
+				
+				throw SSLError.fail(Int(ENOENT), "PKCS12 file not specified.")
+			}
+			
+		#endif
 		
 		// Now check if what's specified actually exists...
 		// See if we've got everything...
@@ -829,8 +841,13 @@ public class SSLService : SSLServiceDelegate {
 		}
 		
 		// Set the socket file descriptor...
-		self.socketPtr.pointee = socket
-		var status: OSStatus = SSLSetConnection(sslContext, self.socketPtr)
+		var tempSocket = socket
+		self.socketPtr = withUnsafePointer(to: &tempSocket) {
+			
+			return UnsafeRawPointer($0)
+		}
+		
+		var status: OSStatus = SSLSetConnection(sslContext, self.socketPtr!)
 		if status != errSecSuccess {
 			
 			try self.throwLastError(source: "SSLSetConnection", err: status)
@@ -958,11 +975,7 @@ public class SSLService : SSLServiceDelegate {
 	private func sslReadCallback(connection: SSLConnectionRef, data: UnsafeMutableRawPointer, dataLength: UnsafeMutablePointer<Int>) -> OSStatus {
 		
 		// Extract the socket descriptor from the context...
-		var temp = connection
-		let addr = withUnsafePointer(to: &temp) {
-			return UnsafeRawPointer($0)
-		}
-		let socket = addr.assumingMemoryBound(to: Socket.self).pointee
+		let socket = connection.assumingMemoryBound(to: Socket.self).pointee
 		
 		// Now the bytes to read...
 		let bytesRequested = dataLength.pointee
@@ -1019,11 +1032,7 @@ public class SSLService : SSLServiceDelegate {
 	private func sslWriteCallback(connection: SSLConnectionRef, data: UnsafeRawPointer, dataLength: UnsafeMutablePointer<Int>) -> OSStatus {
 		
 		// Extract the socket descriptor from the context...
-		var temp = connection
-		let addr = withUnsafePointer(to: &temp) {
-			return UnsafeRawPointer($0)
-		}
-		let socket = addr.assumingMemoryBound(to: Socket.self).pointee
+		let socket = connection.assumingMemoryBound(to: Socket.self).pointee
 		
 		// Now the bytes to read...
 		let bytesToWrite = dataLength.pointee
