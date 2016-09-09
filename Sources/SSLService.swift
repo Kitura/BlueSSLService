@@ -434,7 +434,7 @@ public class SSLService : SSLServiceDelegate {
 	///		- buffer:		Buffer pointer.
 	///		- bufSize:		Size of the buffer.
 	///
-	///	- Returns the number of bytes read. Zero indicates SSL shutdown or in the case of a non-blocking socket, no data available for reading, less than zero indicates error.
+	///	- Returns: the number of bytes read. Zero indicates SSL shutdown or in the case of a non-blocking socket, no data available for reading, less than zero indicates error.
 	///
 	public func recv(buffer: UnsafeMutableRawPointer, bufSize: Int) throws -> Int {
 		
