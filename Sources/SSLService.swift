@@ -470,8 +470,6 @@ public class SSLService : SSLServiceDelegate {
 		SSL_CTX_set_cipher_list(context, self.configuration.cipherSuite)
 		if self.configuration.certsAreSelfSigned {
 			SSL_CTX_set_verify(context, SSL_VERIFY_NONE, nil)
-		} else {
-			SSL_CTX_set_verify(context, SSL_VERIFY_PEER, nil)
 		}
 		SSL_CTX_set_verify_depth(context, DEFAULT_VERIFY_DEPTH)
 		
@@ -598,10 +596,14 @@ public class SSLService : SSLServiceDelegate {
 			}
 			
 			// If we're here, we've got an error...
-			let reason = "ERROR: verifyConnection, code: \(rc), reason: Peer certificate was not presented."
+			let reason = "ERROR: verifyConnection, code: \(rc), reason: Unable to verify presented peer certificate."
 			throw SSLError.fail(Int(ECONNABORTED), reason)
 			
-		} else {
+		}
+		
+		// If we're a client, we need to see the certificate and verify it...
+		//	Otherwise, if we're a server we may or may not be presented one. If we get one however, we must verify it...
+		if !self.isServer {
 			
 			let reason = "ERROR: verifyConnection, code: \(ECONNABORTED), reason: Peer certificate was not presented."
 			throw SSLError.fail(Int(ECONNABORTED), reason)
