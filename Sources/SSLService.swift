@@ -43,18 +43,18 @@ public class SSLService : SSLServiceDelegate {
 	
 	#if !os(Linux)
 	
-		let SecureTransportErrors: [OSStatus: String] = [
-			errSecSuccess       : "errSecSuccess",
-			errSSLNegotiation   : "errSSLNegotiation",
-			errSecParam         : "errSecParam",
-			errSSLClosedAbort   : "errSSLClosedAbort",
-			errSecIO            : "errSecIO",
-			errSSLWouldBlock    : "errSSLWouldBlock",
-			errSSLPeerUnknownCA : "errSSLPeerUnknownCA",
-			errSSLBadRecordMac  : "errSSLBadRecordMac",
-			errSecAuthFailed    : "errSecAuthFailed",
-			errSSLClosedGraceful: "errSSLClosedGraceful"
-		]
+	let SecureTransportErrors: [OSStatus: String] = [
+		errSecSuccess       : "errSecSuccess",
+		errSSLNegotiation   : "errSSLNegotiation",
+		errSecParam         : "errSecParam",
+		errSSLClosedAbort   : "errSSLClosedAbort",
+		errSecIO            : "errSecIO",
+		errSSLWouldBlock    : "errSSLWouldBlock",
+		errSSLPeerUnknownCA : "errSSLPeerUnknownCA",
+		errSSLBadRecordMac  : "errSSLBadRecordMac",
+		errSecAuthFailed    : "errSecAuthFailed",
+		errSSLClosedGraceful: "errSSLClosedGraceful"
+	]
 	
 	#endif
 	
@@ -193,7 +193,7 @@ public class SSLService : SSLServiceDelegate {
 	#else
 	
 		/// Socket Pointer
-	private var socketPtr: UnsafeRawPointer? = nil
+		private var socketPtr = UnsafeMutablePointer<Socket>.allocate(capacity: 1)
 	
 		/// SSL Context
 		public private(set) var context: SSLContext?
@@ -229,7 +229,7 @@ public class SSLService : SSLServiceDelegate {
 	private init?(with source: SSLService) throws {
 		
 		self.configuration = source.configuration
-
+		
 		// Validate the config...
 		try self.validate(configuration: source.configuration)
 		
@@ -257,15 +257,15 @@ public class SSLService : SSLServiceDelegate {
 				OPENSSL_add_all_algorithms_conf()
 				SSLService.openSSLInitialized = true
 			}
-		
+			
 			// Server or client specific method determination...
 			self.isServer = asServer
 			if isServer {
-			
+				
 				self.method = SSLv23_server_method()
-			
+				
 			} else {
-			
+				
 				self.method = SSLv23_client_method()
 			}
 			
@@ -286,18 +286,18 @@ public class SSLService : SSLServiceDelegate {
 				SSL_shutdown(self.cSSL!)
 				SSL_free(self.cSSL!)
 			}
-		
+			
 			// Now the context...
 			if self.context != nil {
 				SSL_CTX_free(self.context!)
 			}
-		
+			
 			// Finally, finish cleanup...
 			ERR_free_strings()
 			EVP_cleanup()
-		
+			
 		#else
-		
+			
 			// Shutdown and then free SSL pointer...
 			if self.context != nil {
 				SSLClose(self.context!)
@@ -321,7 +321,7 @@ public class SSLService : SSLServiceDelegate {
 			try socket.delegate?.onAccept(socket: socket)
 			
 		} else {
-		
+			
 			#if os(Linux)
 				
 				// Prepare the connection...
@@ -330,7 +330,7 @@ public class SSLService : SSLServiceDelegate {
 				// Start the handshake...
 				let rc = SSL_accept(sslConnect)
 				if rc <= 0 {
-				
+					
 					try self.throwLastError(source: "SSL_accept")
 				}
 				
@@ -356,11 +356,11 @@ public class SSLService : SSLServiceDelegate {
 			
 			// Prepare the connection...
 			let sslConnect = try prepareConnection(socket: socket)
-		
+			
 			// Start the handshake...
 			let rc = SSL_connect(sslConnect)
 			if rc <= 0 {
-			
+				
 				try self.throwLastError(source: "SSL_connect")
 			}
 			
@@ -396,14 +396,14 @@ public class SSLService : SSLServiceDelegate {
 			
 			let rc = SSL_write(sslConnect, buffer, Int32(bufSize))
 			if rc < 0 {
-			
+				
 				try self.throwLastError(source: "SSL_write")
 				return 0
 			}
 			return Int(rc)
-		
+			
 		#else
-		
+			
 			guard let sslContext = self.context else {
 				
 				let reason = "ERROR: SSL_write, code: \(ECONNABORTED), reason: Unable to reference connection)"
@@ -411,14 +411,8 @@ public class SSLService : SSLServiceDelegate {
 			}
 			
 			var processed = 0
-			var status: OSStatus
-			repeat {
-				
-				status = SSLWrite(sslContext, buffer, bufSize, &processed)
-				
-			} while status == errSSLWouldBlock
-			
-			if status != errSecSuccess {
+			let status: OSStatus = SSLWrite(sslContext, buffer, bufSize, &processed)
+			if status != errSecSuccess && status != errSSLWouldBlock {
 				
 				try self.throwLastError(source: "SSL_write", err: status)
 			}
@@ -448,14 +442,14 @@ public class SSLService : SSLServiceDelegate {
 			
 			let rc = SSL_read(sslConnect, buffer, Int32(bufSize))
 			if rc < 0 {
-			
+				
 				try self.throwLastError(source: "SSL_read")
 				return 0
 			}
 			return Int(rc)
-		
+			
 		#else
-		
+			
 			guard let sslContext = self.context else {
 				
 				let reason = "ERROR: SSL_read, code: \(ECONNABORTED), reason: Unable to reference connection)"
@@ -463,14 +457,8 @@ public class SSLService : SSLServiceDelegate {
 			}
 			
 			var processed = 0
-			var status: OSStatus
-			repeat {
-				
-				status = SSLRead(sslContext, buffer, bufSize, &processed)
-				
-			} while status == errSSLWouldBlock
-			
-			if status != errSecSuccess {
+			let status: OSStatus = SSLRead(sslContext, buffer, bufSize, &processed)
+			if status != errSecSuccess && status != errSSLWouldBlock {
 				
 				try self.throwLastError(source: "SSL_read", err: status)
 			}
@@ -549,7 +537,7 @@ public class SSLService : SSLServiceDelegate {
 			}
 			#if os(Linux)
 				if !isDir {
-				
+					
 					throw SSLError.fail(Int(ENOENT), "CA Certificate directory path doesn't specify a directory.")
 				}
 			#else
@@ -594,91 +582,91 @@ public class SSLService : SSLServiceDelegate {
 	private func prepareContext() throws {
 		
 		#if os(Linux)
-		
+			
 			// Make sure we've got the method to use...
 			guard let method = self.method else {
-			
+				
 				let reason = "ERROR: Unable to reference SSL method."
 				throw SSLError.fail(Int(ENOMEM), reason)
 			}
-		
+			
 			// Now we can create the context...
 			self.context = SSL_CTX_new(method)
-		
-			guard let context = self.context else {
 			
+			guard let context = self.context else {
+				
 				let reason = "ERROR: Unable to create SSL context."
 				throw SSLError.fail(Int(ENOMEM), reason)
 			}
-		
+			
 			// Handle the stuff common to both client and server...
 			SSL_CTX_set_cipher_list(context, self.configuration.cipherSuite)
 			if self.configuration.certsAreSelfSigned {
 				SSL_CTX_set_verify(context, SSL_VERIFY_NONE, nil)
 			}
 			SSL_CTX_set_verify_depth(context, DEFAULT_VERIFY_DEPTH)
-		
+			
 			// Then handle the client/server specific stuff...
 			if !self.isServer {
-			
+				
 				SSL_CTX_ctrl(context, SSL_CTRL_OPTIONS, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION, nil)
 			}
-		
+			
 			// Now configure the rest...
 			//	Note: We've already verified the configuration, so we've at least got the minimum requirements.
 			// 	- First process the CA certificate(s) if any...
 			var rc: Int32 = 0
 			if configuration.caCertificateFilePath != nil || configuration.caCertificateDirPath != nil {
-			
+				
 				let caFile = self.configuration.caCertificateFilePath
 				let caPath = self.configuration.caCertificateDirPath
-			
+				
 				rc = SSL_CTX_load_verify_locations(context, caFile, caPath)
 				if rc <= 0 {
-				
+					
 					try self.throwLastError(source: "CA Certificate file/dir")
 				}
 			}
-		
+			
 			//	- Then the app certificate...
 			if let certFilePath = self.configuration.certificateFilePath {
-			
+				
 				rc = SSL_CTX_use_certificate_file(context, certFilePath, SSL_FILETYPE_PEM)
 				if rc <= 0 {
-				
+					
 					try self.throwLastError(source: "Certificate")
 				}
 			}
-		
+			
 			//	- An' the corresponding Private key file...
 			if let keyFilePath = self.configuration.keyFilePath {
-			
+				
 				rc = SSL_CTX_use_PrivateKey_file(context, keyFilePath, SSL_FILETYPE_PEM)
 				if rc <= 0 {
-				
+					
 					try self.throwLastError(source: "Key file")
 				}
-			
+				
 				// Check it for consistency...
 				rc = SSL_CTX_check_private_key(context)
 				if rc <= 0 {
-				
+					
 					try self.throwLastError(source: "Check private key")
 				}
 			}
-		
+			
 			//	- Finally, if present, the certificate chain path...
 			if let chainPath = configuration.certificateChainFilePath {
-			
+				
 				rc = SSL_CTX_use_certificate_chain_file(context, chainPath)
 				if rc <= 0 {
-				
+					
 					try self.throwLastError(source: "Certificate chain file")
 				}
 			}
-		
+			
 		#else
-		
+			
 			if !self.isServer {
 				
 				let reason = "ERROR: Only server currently supported"
@@ -686,7 +674,7 @@ public class SSLService : SSLServiceDelegate {
 			}
 			
 			//	Note: We've already verified the configuration, so we've at least got the minimum requirements.
-
+			
 			//	- Must have certificate chain path...
 			if let chainPath = configuration.certificateChainFilePath {
 				
@@ -799,26 +787,26 @@ public class SSLService : SSLServiceDelegate {
 	/// - Returns: `UnsafeMutablePointer` to the SSL connection.
 	///
 	private func prepareConnection(socket: Socket) throws -> UnsafeMutablePointer<SSL> {
-		
+	
 		// Make sure our context is valid...
 		guard let context = self.context else {
-			
-			let reason = "ERROR: Unable to access SSL context."
+	
+		let reason = "ERROR: Unable to access SSL context."
 			throw SSLError.fail(Int(EFAULT), reason)
 		}
-		
+	
 		// Now create the connection...
 		self.cSSL = SSL_new(context)
-		
+	
 		guard let sslConnect = self.cSSL else {
-			
-			let reason = "ERROR: Unable to create SSL connection."
+	
+		let reason = "ERROR: Unable to create SSL connection."
 			throw SSLError.fail(Int(EFAULT), reason)
 		}
-		
+	
 		// Set the socket file descriptor...
 		SSL_set_fd(sslConnect, socket.socketfd)
-		
+	
 		return sslConnect
 	}
 	
@@ -838,14 +826,10 @@ public class SSLService : SSLServiceDelegate {
 			throw SSLError.fail(Int(EFAULT), reason)
 		}
 		
-		// Set the socket file descriptor...
-		var tempSocket = socket
-		self.socketPtr = withUnsafePointer(to: &tempSocket) {
-			
-			return UnsafeRawPointer($0)
-		}
+		// Set the Socket as our connection data...
+		self.socketPtr.pointee = socket
 		
-		var status: OSStatus = SSLSetConnection(sslContext, self.socketPtr!)
+		var status: OSStatus = SSLSetConnection(sslContext, self.socketPtr)
 		if status != errSecSuccess {
 			
 			try self.throwLastError(source: "SSLSetConnection", err: status)
@@ -878,14 +862,14 @@ public class SSLService : SSLServiceDelegate {
 		// @FIXME: No verification on macOS yet...
 		
 		#if os(Linux)
-
+			
 			// Standard Linux verification...
 			guard let sslConnect = self.cSSL else {
-			
+				
 				let reason = "ERROR: verifyConnection, code: \(ECONNABORTED), reason: Unable to reference connection)"
 				throw SSLError.fail(Int(ECONNABORTED), reason)
 			}
-		
+			
 			if SSL_get_peer_certificate(sslConnect) != nil {
 				
 				let rc = SSL_get_verify_result(sslConnect)
@@ -914,7 +898,7 @@ public class SSLService : SSLServiceDelegate {
 				let reason = "ERROR: verifyConnection, code: \(ECONNABORTED), reason: Peer certificate was not presented."
 				throw SSLError.fail(Int(ECONNABORTED), reason)
 			}
-		
+			
 		#endif
 	}
 	
@@ -922,7 +906,7 @@ public class SSLService : SSLServiceDelegate {
 	/// Throws the last error encountered.
 	///
 	/// - Parameters:
- 	///		- source: 	The string describing the error.
+	///		- source: 	The string describing the error.
 	///		- err:		On `macOS`, the error code, *unused* on `Linux`.
 	///
 	///	- Returns:		Throws an exception.  On `Linux`, however, if `ERR_get_error()` returns a zero (0), this function simply returns indicating no error.
@@ -963,7 +947,7 @@ public class SSLService : SSLServiceDelegate {
 }
 
 #if !os(Linux)
-
+	
 	///
 	/// SSL Read Callback
 	///
@@ -1045,7 +1029,7 @@ public class SSLService : SSLServiceDelegate {
 			
 			dataLength.initialize(to: bytesWritten)
 			if bytesToWrite > bytesWritten {
-			
+				
 				return Int32(errSSLWouldBlock)
 				
 			} else {
@@ -1063,7 +1047,7 @@ public class SSLService : SSLServiceDelegate {
 			dataLength.initialize(to: 0)
 			
 			if errno == EAGAIN {
-			
+				
 				return OSStatus(errSSLWouldBlock)
 				
 			} else {
