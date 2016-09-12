@@ -153,16 +153,16 @@ public class SSLService : SSLServiceDelegate {
 		///
 		/// - Parameters:
 		///		- chainFilePath:			Path to the certificate chain file (optional). *(see note above)*
-		///		- selfSigned:				True if certs are `self-signed`, false otherwise. Defaults to true.
 		///		- password:					Password for the chain file (optional).
+		///		- selfSigned:				True if certs are `self-signed`, false otherwise. Defaults to true.
 		///
 		///	- Returns:	New Configuration instance.
 		///
-		public init(withChainFilePath chainFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true, withPassword password: String? = nil) {
+		public init(withChainFilePath chainFilePath: String? = nil, withPassword password: String? = nil, usingSelfSignedCerts selfSigned: Bool = true) {
 			
 			self.certificateChainFilePath = chainFilePath
-			self.certsAreSelfSigned = selfSigned
 			self.password = password
+			self.certsAreSelfSigned = selfSigned
 		}
 	}
 	
