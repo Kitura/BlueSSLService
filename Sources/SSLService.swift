@@ -826,7 +826,7 @@ public class SSLService : SSLServiceDelegate {
 			throw SSLError.fail(Int(EFAULT), reason)
 		}
 		
-		// Set the Socket as our connection data...
+		// Set the socket file descriptor as our connection data...
 		self.socketPtr.pointee = socket.socketfd
 		
 		var status: OSStatus = SSLSetConnection(sslContext, self.socketPtr)
@@ -961,13 +961,13 @@ public class SSLService : SSLServiceDelegate {
 	private func sslReadCallback(connection: SSLConnectionRef, data: UnsafeMutableRawPointer, dataLength: UnsafeMutablePointer<Int>) -> OSStatus {
 		
 		// Extract the socket descriptor from the context...
-		let socket = connection.assumingMemoryBound(to: Int32.self).pointee
+		let socketfd = connection.assumingMemoryBound(to: Int32.self).pointee
 		
 		// Now the bytes to read...
 		let bytesRequested = dataLength.pointee
 		
 		// Read the data from the socket...
-		let bytesRead = read(socket, data, UnsafePointer<Int>(dataLength).pointee)
+		let bytesRead = read(socketfd, data, bytesRequested)
 		if bytesRead > 0 {
 			
 			dataLength.initialize(to: bytesRead)
@@ -1018,13 +1018,13 @@ public class SSLService : SSLServiceDelegate {
 	private func sslWriteCallback(connection: SSLConnectionRef, data: UnsafeRawPointer, dataLength: UnsafeMutablePointer<Int>) -> OSStatus {
 		
 		// Extract the socket descriptor from the context...
-		let socket = connection.assumingMemoryBound(to: Int32.self).pointee
+		let socketfd = connection.assumingMemoryBound(to: Int32.self).pointee
 		
 		// Now the bytes to read...
 		let bytesToWrite = dataLength.pointee
 		
 		// Write to the socket...
-		let bytesWritten = write(socket, data, UnsafePointer<Int>(dataLength).pointee)
+		let bytesWritten = write(socketfd, data, bytesToWrite)
 		if bytesWritten > 0 {
 			
 			dataLength.initialize(to: bytesWritten)
