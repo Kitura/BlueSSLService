@@ -29,7 +29,7 @@ import PackageDescription
 		targets: [Target(name: "SSLService")],
 		dependencies: [
 			.Package(url: url, majorVersion: majorVersion, minor: minorVersion),
-			.Package(url: "https://github.com/IBM-Swift/BlueSocket.git", majorVersion: 0, minor: 10),
+			.Package(url: "https://github.com/IBM-Swift/BlueSocket.git", majorVersion: 0, minor: 11),
 		],
 		exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]
 	)
@@ -38,7 +38,7 @@ import PackageDescription
 		name: "SSLService",
 		targets: [Target(name: "SSLService")],
 		dependencies: [
-			.Package(url: "https://github.com/IBM-Swift/BlueSocket.git", majorVersion: 0, minor: 10),
+			.Package(url: "https://github.com/IBM-Swift/BlueSocket.git", majorVersion: 0, minor: 11),
 			],
 		exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]
 	)
