@@ -247,6 +247,8 @@ public class SSLService : SSLServiceDelegate {
 	///
 	public func initialize(asServer: Bool) throws {
 		
+		self.isServer = asServer
+
 		#if os(Linux)
 			
 			// Common initialization...
@@ -259,7 +261,6 @@ public class SSLService : SSLServiceDelegate {
 			}
 			
 			// Server or client specific method determination...
-			self.isServer = asServer
 			if isServer {
 				
 				self.method = SSLv23_server_method()
@@ -452,7 +453,7 @@ public class SSLService : SSLServiceDelegate {
 			
 			guard let sslContext = self.context else {
 				
-				let reason = "ERROR: SSL_read, code: \(ECONNABORTED), reason: Unable to reference connection)"
+				let reason = "ERROR: SSLRead, code: \(ECONNABORTED), reason: Unable to reference connection)"
 				throw SSLError.fail(Int(ECONNABORTED), reason)
 			}
 			
@@ -460,7 +461,7 @@ public class SSLService : SSLServiceDelegate {
 			let status: OSStatus = SSLRead(sslContext, buffer, bufSize, &processed)
 			if status != errSecSuccess && status != errSSLWouldBlock {
 				
-				try self.throwLastError(source: "SSL_read", err: status)
+				try self.throwLastError(source: "SSLRead", err: status)
 			}
 			
 			return processed
@@ -667,12 +668,6 @@ public class SSLService : SSLServiceDelegate {
 			
 		#else
 			
-			if !self.isServer {
-				
-				let reason = "ERROR: Only server currently supported"
-				throw SSLError.fail(Int(ENOENT),reason)
-			}
-			
 			//	Note: We've already verified the configuration, so we've at least got the minimum requirements.
 			
 			//	- Must have certificate chain path...
@@ -691,7 +686,8 @@ public class SSLService : SSLServiceDelegate {
 			}
 			
 			// Create the context...
-			self.context = SSLCreateContext(kCFAllocatorDefault,SSLProtocolSide.serverSide,SSLConnectionType.streamType)
+			let protocolSide: SSLProtocolSide = self.isServer ? .serverSide : .clientSide
+			self.context = SSLCreateContext(kCFAllocatorDefault, protocolSide, SSLConnectionType.streamType)
 			guard let sslContext = self.context else {
 				
 				let reason = "ERROR: Unable to create SSL context."
