@@ -193,7 +193,7 @@ public class SSLService : SSLServiceDelegate {
 	#else
 	
 		/// Socket Pointer
-		private var socketPtr = UnsafeMutablePointer<Socket>.allocate(capacity: 1)
+		private var socketPtr = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
 	
 		/// SSL Context
 		public private(set) var context: SSLContext?
@@ -827,7 +827,7 @@ public class SSLService : SSLServiceDelegate {
 		}
 		
 		// Set the Socket as our connection data...
-		self.socketPtr.pointee = socket
+		self.socketPtr.pointee = socket.socketfd
 		
 		var status: OSStatus = SSLSetConnection(sslContext, self.socketPtr)
 		if status != errSecSuccess {
@@ -961,13 +961,13 @@ public class SSLService : SSLServiceDelegate {
 	private func sslReadCallback(connection: SSLConnectionRef, data: UnsafeMutableRawPointer, dataLength: UnsafeMutablePointer<Int>) -> OSStatus {
 		
 		// Extract the socket descriptor from the context...
-		let socket = connection.assumingMemoryBound(to: Socket.self).pointee
+		let socket = connection.assumingMemoryBound(to: Int32.self).pointee
 		
 		// Now the bytes to read...
 		let bytesRequested = dataLength.pointee
 		
 		// Read the data from the socket...
-		let bytesRead = read(socket.socketfd, data, UnsafePointer<Int>(dataLength).pointee)
+		let bytesRead = read(socket, data, UnsafePointer<Int>(dataLength).pointee)
 		if bytesRead > 0 {
 			
 			dataLength.initialize(to: bytesRead)
@@ -1018,13 +1018,13 @@ public class SSLService : SSLServiceDelegate {
 	private func sslWriteCallback(connection: SSLConnectionRef, data: UnsafeRawPointer, dataLength: UnsafeMutablePointer<Int>) -> OSStatus {
 		
 		// Extract the socket descriptor from the context...
-		let socket = connection.assumingMemoryBound(to: Socket.self).pointee
+		let socket = connection.assumingMemoryBound(to: Int32.self).pointee
 		
 		// Now the bytes to read...
 		let bytesToWrite = dataLength.pointee
 		
 		// Write to the socket...
-		let bytesWritten = write(socket.socketfd, data, UnsafePointer<Int>(dataLength).pointee)
+		let bytesWritten = write(socket, data, UnsafePointer<Int>(dataLength).pointee)
 		if bytesWritten > 0 {
 			
 			dataLength.initialize(to: bytesWritten)
