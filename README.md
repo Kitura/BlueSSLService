@@ -90,7 +90,7 @@ Both clients and server require at a minimum the following configuration items:
 
 *Note 4:* If you desire to customize the cipher suite used, you can do so by setting the `cipherSuite` member after creating the configuration.  The default value if not changed is set to `ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL`. See the example below.
 
-*Note 5:* If you're running on macOS, you must use the third form of init for the `Configuration` and provide a certificate chain file in `PKCS12` format, supplying a `password` if needed.
+*Note 5:* If you're running on macOS, you must use the third form of `init` for the `Configuration` and provide a certificate chain file in `PKCS12` format, supplying a `password` if needed.
 
 #### Example
 
