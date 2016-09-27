@@ -263,7 +263,7 @@ public class SSLService : SSLServiceDelegate {
 				SSL_load_error_strings()
 				OPENSSL_config(nil)
 				OPENSSL_add_all_algorithms_conf()
-				SSLService.openSSLInitialized = true
+				SSLService.initialized = true
 			}
 			
 			// Server or client specific method determination...
