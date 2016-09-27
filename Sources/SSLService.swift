@@ -35,15 +35,15 @@ public class SSLService : SSLServiceDelegate {
 	
 	// MARK: Statics
 	
-	static var openSSLInitialized: Bool 		= false
+	static var initialized: Bool 			= false
 	
 	// MARK: Constants
 	
-	let DEFAULT_VERIFY_DEPTH: Int32				= 2
+	let DEFAULT_VERIFY_DEPTH: Int32					= 2
 	
 	#if !os(Linux)
 	
-	let SecureTransportErrors: [OSStatus: String] = [
+	let SecureTransportErrors: [OSStatus: String] 	= [
 		errSecSuccess       : "errSecSuccess",
 		errSSLNegotiation   : "errSSLNegotiation",
 		errSecParam         : "errSecParam",
@@ -170,30 +170,35 @@ public class SSLService : SSLServiceDelegate {
 	
 	// MARK: -- Public
 	
+	// MARK: --- Settable
+	
+	/// Verification Callback
+	public var verifyCallback: ((_ service: SSLService) -> (Bool, String?))? = nil
+	
+	// MARK: --- Read Only
+	
 	/// SSL Configuration (Read only)
 	public private(set) var configuration: Configuration
 	
-	// MARK: -- Private
-	
 	/// True if setup as server, false if setup as client.
-	private var isServer: Bool = true
+	public private(set) var isServer: Bool = true
 	
 	#if os(Linux)
 	
 		/// SSL Connection
-		private var cSSL: UnsafeMutablePointer<SSL>? = nil
+		public private(set) var cSSL: UnsafeMutablePointer<SSL>? = nil
 	
 		/// SSL Method
 		/// **Note:** We use `SSLv23` which causes negotiation of the highest available SSL/TLS version.
-		private var method: UnsafePointer<SSL_METHOD>? = nil
+		public private(set) var method: UnsafePointer<SSL_METHOD>? = nil
 	
 		/// SSL Context
-		private var context: UnsafeMutablePointer<SSL_CTX>? = nil
+		public private(set) var context: UnsafeMutablePointer<SSL_CTX>? = nil
 	
 	#else
 	
 		/// Socket Pointer
-		private var socketPtr = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
+		public private(set) var socketPtr = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
 	
 		/// SSL Context
 		public private(set) var context: SSLContext?
@@ -252,7 +257,8 @@ public class SSLService : SSLServiceDelegate {
 		#if os(Linux)
 			
 			// Common initialization...
-			if !SSLService.openSSLInitialized {
+			// 	- We only do this once...
+			if !SSLService.initialized {
 				SSL_library_init()
 				SSL_load_error_strings()
 				OPENSSL_config(nil)
@@ -282,6 +288,7 @@ public class SSLService : SSLServiceDelegate {
 	public func deinitialize() {
 		
 		#if os(Linux)
+			
 			// Shutdown and then free SSL pointer...
 			if self.cSSL != nil {
 				SSL_shutdown(self.cSSL!)
@@ -855,7 +862,7 @@ public class SSLService : SSLServiceDelegate {
 			return
 		}
 		
-		// @FIXME: No verification on macOS yet...
+		// @FIXME: No standard verification on macOS yet...
 		
 		#if os(Linux)
 			
@@ -896,6 +903,17 @@ public class SSLService : SSLServiceDelegate {
 			}
 			
 		#endif
+		
+		if let callback = self.verifyCallback {
+			
+			let (passed, failReason) = callback(self)
+			if passed {
+				return
+			}
+			
+			let reason = failReason ?? "Unknown verification failure"
+			throw SSLError.fail(Int(EFAULT), "ERROR: " + reason)
+		}
 	}
 	
 	///

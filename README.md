@@ -155,3 +155,11 @@ The example above creates a `SSL server` socket. Replacing the `socket.listen` f
 try socket.connect(to: "someplace.org", port: 1337)
 ```
 `SSLService` handles all the negotiation and setup for the secure transfer of data. The determining factor for whether or not a `Socket` is setup as a server or client `Socket` is API which is used to initiate a connection. `listen()` will cause the `Socket` to be setup as a server socket.  Calling `connect()` results a client setup.
+
+### Extending Connection Verification
+
+`SSLService` provides a callback mechanism should you need to specify additional verification logic. After creating the instance of `SSLService`, you can set the instance variable `verifyCallback`.  This instance variable has the following signature:
+```
+public var verifyCallback: ((_ service: SSLService) -> (Bool, String?))? = nil
+```
+Setting this callback is not required. It defaults to `nil` unless set.  The first parameter passed to your callback is the instance of `SSLService` that has this callback.  This will allow you to access the public members of the `SSLService` instance in order to do additional verification.  Upon completion, your callback should return a tuple.  The first value is a `Bool` indicating the sucess or failure of the routine.  The second value is an `optional String` value used to provide a description in the case where verification failed. In the event of callback failure, an `exception` will be thrown by the internal verification function.  **Important Note:** To effectively use this callback requires knowledge of the platforms underlying secure transport service, `Apple Secure Transport` on `macOS` and `OpenSSL` on `Linux`.
