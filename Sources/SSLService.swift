@@ -29,39 +29,44 @@ import Socket
 // MARK: SSLService
 
 ///
-/// SSL Service Plugin for Socket using OpenSSL
+/// SSL Service Plugin for Socket using **Apple Secure Transport** on `macOS` and **OpenSSL** on `Linux`.
 ///
 public class SSLService : SSLServiceDelegate {
 	
 	// MARK: Statics
 	
-	static var initialized: Bool 			= false
+	#if os(Linux)
+		/// Flag set to indicate that OpenSSL has been initialized.  This initialization need only be done once per instance.
+		static var initialized: Bool 					= false
+	#endif
 	
 	// MARK: Constants
 	
-	let DEFAULT_VERIFY_DEPTH: Int32					= 2
+	/// Default verfication depth
+	let DEFAULT_VERIFY_DEPTH: Int32						= 2
 	
 	#if !os(Linux)
 	
-	let SecureTransportErrors: [OSStatus: String] 	= [
-		errSecSuccess       : "errSecSuccess",
-		errSSLNegotiation   : "errSSLNegotiation",
-		errSecParam         : "errSecParam",
-		errSSLClosedAbort   : "errSSLClosedAbort",
-		errSecIO            : "errSecIO",
-		errSSLWouldBlock    : "errSSLWouldBlock",
-		errSSLPeerUnknownCA : "errSSLPeerUnknownCA",
-		errSSLBadRecordMac  : "errSSLBadRecordMac",
-		errSecAuthFailed    : "errSecAuthFailed",
-		errSSLClosedGraceful: "errSSLClosedGraceful"
-	]
+		/// String representation of Secure Transport Errors
+		let SecureTransportErrors: [OSStatus: String] 	= [
+			errSecSuccess       : "errSecSuccess",
+			errSSLNegotiation   : "errSSLNegotiation",
+			errSecParam         : "errSecParam",
+			errSSLClosedAbort   : "errSSLClosedAbort",
+			errSecIO            : "errSecIO",
+			errSSLWouldBlock    : "errSSLWouldBlock",
+			errSSLPeerUnknownCA : "errSSLPeerUnknownCA",
+			errSSLBadRecordMac  : "errSSLBadRecordMac",
+			errSecAuthFailed    : "errSecAuthFailed",
+			errSSLClosedGraceful: "errSSLClosedGraceful"
+		]
 	
 	#endif
 	
 	// MARK: Typealiases
 	
 	#if os(Linux)
-		typealias OSStatus = Int32
+		typealias OSStatus 								= Int32
 	#endif
 	
 	
@@ -94,10 +99,11 @@ public class SSLService : SSLServiceDelegate {
 		public private(set) var certsAreSelfSigned = false
 		
 		#if os(Linux)
-			/// Cipher suite to use. Defaults to `ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL`
+			/// Cipher suites to use. Defaults to `ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL`
 			public var cipherSuite: String = "ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL"
 		#else
-			/// Cipher suite to use. Defaults to `14,13,2B,2F,2C,30,9E,9F,23,27,09,28,13,24,0A,14,67,33,6B,39,08,12,16,9C,9D,3C,3D,2F,35,0A`
+			/// Cipher suites to use. Defaults to `14,13,2B,2F,2C,30,9E,9F,23,27,09,28,13,24,0A,14,67,33,6B,39,08,12,16,9C,9D,3C,3D,2F,35,0A`
+			// @FIXME: This isn't quite right, needs to be revisited.
 			public var cipherSuite: String = "14,13,2B,2F,2C,30,9E,9F,23,27,09,28,13,24,0A,14,67,33,6B,39,08,12,16,9C,9D,3C,3D,2F,35,0A"
 		#endif
 		
@@ -172,7 +178,13 @@ public class SSLService : SSLServiceDelegate {
 	
 	// MARK: --- Settable
 	
-	/// Verification Callback
+	///
+	/// Verification Callback. Called by the internal `verifyConnection()` function to do any additional connection verification.  This callback is set after initializing the `SSLService`.
+	///
+	/// - Parameters service:	This service module
+	///
+	/// - Returns:	Tuple containing a `Bool` to indicate success or failure of the verification and a `String?` containing text describing the error if desired.
+	///
 	public var verifyCallback: ((_ service: SSLService) -> (Bool, String?))? = nil
 	
 	// MARK: --- Read Only
@@ -197,7 +209,7 @@ public class SSLService : SSLServiceDelegate {
 	
 	#else
 	
-		/// Socket Pointer
+		/// Socket Pointer containing the socket fd (passed to the `SSLRead` and `SSLWrite` callback routines).
 		public private(set) var socketPtr = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
 	
 		/// SSL Context
@@ -209,11 +221,11 @@ public class SSLService : SSLServiceDelegate {
 	// MARK: Lifecycle
 	
 	///
-	/// Initialize an SSLService instance.
+	/// Initialize an `SSLService` instance.
 	///
 	/// - Parameter config:		Configuration to use.
 	///
-	/// - Returns: SSLService instance.
+	/// - Returns: `SSLService` instance.
 	///
 	public init?(usingConfiguration config: Configuration) throws {
 		
@@ -225,11 +237,11 @@ public class SSLService : SSLServiceDelegate {
 	}
 	
 	///
-	/// Clone an existing instance of SSLService.
+	/// Clone an existing instance of `SSLService`.
 	///
-	/// - Parameter source:		The instance of SSLService to clone.
+	/// - Parameter source:		The instance of `SSLService` to clone.
 	///
-	/// - Returns: New SSLService instance cloned from the provided instance.
+	/// - Returns: New `SSLService` instance cloned from the provided instance.
 	///
 	private init?(with source: SSLService) throws {
 		
@@ -246,7 +258,7 @@ public class SSLService : SSLServiceDelegate {
 	// MARK: SSLServiceDelegate Protocol
 	
 	///
-	/// Initialize SSL Service
+	/// Initialize `SSLService`
 	///
 	/// - Parameter asServer:	True for initializing a server, otherwise a client.
 	///
@@ -283,7 +295,7 @@ public class SSLService : SSLServiceDelegate {
 	}
 	
 	///
-	/// Deinitialize SSL Service
+	/// Deinitialize `SSLService`
 	///
 	public func deinitialize() {
 		
@@ -306,7 +318,7 @@ public class SSLService : SSLServiceDelegate {
 			
 		#else
 			
-			// Shutdown and then free SSL pointer...
+			// Cloae the context...
 			if self.context != nil {
 				SSLClose(self.context!)
 			}
@@ -317,7 +329,7 @@ public class SSLService : SSLServiceDelegate {
 	///
 	/// Processing on acceptance from a listening socket
 	///
-	/// - Parameter socket:	The connected Socket instance.
+	/// - Parameter socket:	The connected `Socket` instance.
 	///
 	public func onAccept(socket: Socket) throws {
 		
@@ -344,7 +356,7 @@ public class SSLService : SSLServiceDelegate {
 				
 			#else
 				
-				// Prepare the connection...
+				// Prepare the connection and start the handshake process...
 				try prepareConnection(socket: socket)
 				
 			#endif
@@ -356,7 +368,7 @@ public class SSLService : SSLServiceDelegate {
 	///
 	/// Processing on connection to a listening socket
 	///
-	/// - Parameter socket:	The connected Socket instance.
+	/// - Parameter socket:	The connected `Socket` instance.
 	///
 	public func onConnect(socket: Socket) throws {
 		
@@ -374,7 +386,7 @@ public class SSLService : SSLServiceDelegate {
 			
 		#else
 			
-			// Prepare the connection...
+			// Prepare the connection and start the handshake process...
 			try prepareConnection(socket: socket)
 			
 		#endif
@@ -422,7 +434,7 @@ public class SSLService : SSLServiceDelegate {
 			let status: OSStatus = SSLWrite(sslContext, buffer, bufSize, &processed)
 			if status != errSecSuccess && status != errSSLWouldBlock {
 				
-				try self.throwLastError(source: "SSL_write", err: status)
+				try self.throwLastError(source: "SSLWrite", err: status)
 			}
 			return processed
 			
@@ -702,16 +714,17 @@ public class SSLService : SSLServiceDelegate {
 			}
 			
 			// Now prepare it...
+			//	- Setup our read and write callbacks...
 			SSLSetIOFuncs(sslContext, sslReadCallback, sslWriteCallback)
 			
-			// Ensure we've got the certificates...
+			//	- Ensure we've got the certificates...
 			guard let certFile = configuration.certificateChainFilePath else {
 				
 				let reason = "ERROR: No PKCS12 file"
 				throw SSLError.fail(Int(ENOENT),reason)
 			}
 			
-			// Now load them...
+			// 	- Now load them...
 			var status: OSStatus
 			guard let p12Data = NSData(contentsOfFile: certFile) else {
 				
@@ -719,7 +732,7 @@ public class SSLService : SSLServiceDelegate {
 				throw SSLError.fail(Int(ENOENT),reason)
 			}
 			
-			// Create key dictionary for reading p12 file...
+			// 	- Create key dictionary for reading p12 file...
 			guard let passwd: String = self.configuration.password else {
 				
 				let reason = "ERROR: No password for PKCS12 file"
@@ -730,18 +743,18 @@ public class SSLService : SSLServiceDelegate {
 			
 			var items: CFArray? = nil
 			
-			// Import the PKCS12 file...
+			// 	- Import the PKCS12 file...
 			status = SecPKCS12Import(p12Data, options, &items)
 			if status != errSecSuccess {
 				
 				try self.throwLastError(source: "SecPKCS12Import", err: status)
 			}
 			
-			// Now extract what we need...
+			// 	- Now extract what we need...
 			let newArray = items! as [AnyObject] as NSArray
 			let dictionary = newArray.object(at: 0)
 			
-			//	- Identity reference...
+			//	-- Identity reference...
 			var secIdentityRef = (dictionary as AnyObject).value(forKey: kSecImportItemKeyID as String)
 			secIdentityRef = (dictionary as AnyObject).value(forKey: "identity")
 			guard let secIdentity = secIdentityRef else {
@@ -750,6 +763,7 @@ public class SSLService : SSLServiceDelegate {
 				throw SSLError.fail(Int(ENOENT),reason)
 			}
 			
+			//	-- Cert chain...
 			var certs = [secIdentity]
 			var ccerts: Array<SecCertificate> = (dictionary as AnyObject).value(forKey: kSecImportItemCertChain as String) as! Array<SecCertificate>
 			for i in 1 ..< ccerts.count {
@@ -763,7 +777,7 @@ public class SSLService : SSLServiceDelegate {
 				try self.throwLastError(source: "SSLSetCertificate", err: status)
 			}
 			
-			
+			//	- Setup the cipher list...
 			let cipherlist = configuration.cipherSuite.components(separatedBy: ",")
 			let eSize = cipherlist.count * MemoryLayout<SSLCipherSuite>.size
 			let eCipherSuites : UnsafeMutablePointer<SSLCipherSuite> = UnsafeMutablePointer.allocate(capacity: eSize)
@@ -771,6 +785,8 @@ public class SSLService : SSLServiceDelegate {
 				
 				eCipherSuites.advanced(by: i).pointee = UInt32(cipherlist[i] , radix: 16)!
 			}
+			
+			//	- Enable the desired ciphers...
 			status = SSLSetEnabledCiphers(sslContext, eCipherSuites, cipherlist.count)
 			if status != errSecSuccess {
 				
@@ -785,7 +801,7 @@ public class SSLService : SSLServiceDelegate {
 	///
 	/// Prepare the connection for either server or client use.
 	///
-	/// - Parameter socket:	The connected Socket instance.
+	/// - Parameter socket:	The connected `Socket` instance.
 	///
 	/// - Returns: `UnsafeMutablePointer` to the SSL connection.
 	///
@@ -818,7 +834,7 @@ public class SSLService : SSLServiceDelegate {
 	///
 	/// Prepare the connection for either server or client use.
 	///
-	/// - Parameter socket:	The connected Socket instance.
+	/// - Parameter socket:	The connected `Socket` instance.
 	///
 	private func prepareConnection(socket: Socket) throws {
 		
@@ -838,6 +854,7 @@ public class SSLService : SSLServiceDelegate {
 			try self.throwLastError(source: "SSLSetConnection", err: status)
 		}
 		
+		// Start and repeat the handshake process until it either completes or fails...
 		repeat {
 			
 			status = SSLHandshake(sslContext)
@@ -861,8 +878,6 @@ public class SSLService : SSLServiceDelegate {
 		if self.configuration.certsAreSelfSigned && self.isServer {
 			return
 		}
-		
-		// @FIXME: No standard verification on macOS yet...
 		
 		#if os(Linux)
 			
@@ -902,8 +917,15 @@ public class SSLService : SSLServiceDelegate {
 				throw SSLError.fail(Int(ECONNABORTED), reason)
 			}
 			
+		#else
+			
+			// @FIXME: No standard verification on macOS yet...
+			
 		#endif
 		
+		// Do any additional caller defined verification...
+		
+		// If a callback to do additional verification is present, execute the callback now...
 		if let callback = self.verifyCallback {
 			
 			let (passed, failReason) = callback(self)
@@ -974,7 +996,7 @@ public class SSLService : SSLServiceDelegate {
 	///
 	private func sslReadCallback(connection: SSLConnectionRef, data: UnsafeMutableRawPointer, dataLength: UnsafeMutablePointer<Int>) -> OSStatus {
 		
-		// Extract the socket descriptor from the context...
+		// Extract the socket file descriptor from the context...
 		let socketfd = connection.assumingMemoryBound(to: Int32.self).pointee
 		
 		// Now the bytes to read...
@@ -1031,7 +1053,7 @@ public class SSLService : SSLServiceDelegate {
 	///
 	private func sslWriteCallback(connection: SSLConnectionRef, data: UnsafeRawPointer, dataLength: UnsafeMutablePointer<Int>) -> OSStatus {
 		
-		// Extract the socket descriptor from the context...
+		// Extract the socket file descriptor from the context...
 		let socketfd = connection.assumingMemoryBound(to: Int32.self).pointee
 		
 		// Now the bytes to read...
