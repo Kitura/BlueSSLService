@@ -33,21 +33,14 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 
 ### Package Dependencies
 
-* BlueSocket v0.7.0 or higher
-* OpenSSL-OSX v0.2.4 or higher for macOS
+* BlueSocket v0.10.0 or higher
 * OpenSSL v0.2.0 or higher for Linux
 
 *Note:* See `Package.swift` for details.
 
 ## Build
 
-To build `SSLService` from the command line on macOS (assuming OpenSSL installed using `brew`):
-
-```
-% cd <path-to-clone>
-% swift build -Xcc -I/usr/local/opt/openssl/include
-```
-To build `SSLService` from the command line on Linux:
+To build `SSLService` from the command line:
 
 ```
 % cd <path-to-clone>
@@ -80,10 +73,14 @@ Both clients and server require at a minimum the following configuration items:
 * Application certificate (`certificateFilePath`)
 * Private Key file (`keyFilePath`)
 
+**or**, if running on macOS:
+
+* Certificate Chain File (`chainFilePath`) in **PKCS12** format.
+
 **BlueSSLService** provides three ways to create a `Configuration`.  These are:
 - `init(withCACertificatePath caCertificateFilePath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true)` - This API allows you to create a configuration using a self contained `Certificate Authority (CA)` file. The second parameter is the path to the `Certificate` file to be used by application to establish the connection.  The next parameter is the path to the `Private Key` file used by application corresponding to the `Public Key` in the `Certificate`. If you're using `self-signed certificates`, set the last parameter to true.
 - `init(withCACertificateDirectory caCertificateDirPath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true)` - This API allows you to create a configuration using a directory of `Certificate Authority (CA)` files. These `CA` certificates **must** be hashed using the `Certificate Tool` provided by `OpenSSL`. The following parameters are identical to the previous API.
-- `init(withChainFilePath chainFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true)` - This API allow you to create a configuration using single `Certificate Chain File` (see note 2 below). Set the last parameter to true if the certificates are `self-signed`, otherwise set it to false.
+- `init(withChainFilePath chainFilePath: String? = nil, withPassword password: String? = nil, usingSelfSignedCerts selfSigned: Bool = true)` - This API allow you to create a configuration using a single `Certificate Chain File` (see note 2 below). Add an optional password (if required) using the third parameter. Set the third parameter to true if the certificates are `self-signed`, otherwise set it to false.
 
 *Note 1:* All `Certificate` and `Private Key` files must be `PEM` format.
 
@@ -92,6 +89,8 @@ Both clients and server require at a minimum the following configuration items:
 *Note 3:* For the first two versions of the API, if your `Private key` is included in your certificate file, you can omit this parameter and the API will use the same file name as specified for the certificate file.
 
 *Note 4:* If you desire to customize the cipher suite used, you can do so by setting the `cipherSuite` member after creating the configuration.  The default value if not changed is set to `ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL`. See the example below.
+
+*Note 5:* If you're running on macOS, you must use the third form of `init` for the `Configuration` and provide a certificate chain file in `PKCS12` format, supplying a `password` if needed.
 
 #### Example
 
@@ -156,3 +155,11 @@ The example above creates a `SSL server` socket. Replacing the `socket.listen` f
 try socket.connect(to: "someplace.org", port: 1337)
 ```
 `SSLService` handles all the negotiation and setup for the secure transfer of data. The determining factor for whether or not a `Socket` is setup as a server or client `Socket` is API which is used to initiate a connection. `listen()` will cause the `Socket` to be setup as a server socket.  Calling `connect()` results a client setup.
+
+### Extending Connection Verification
+
+`SSLService` provides a callback mechanism should you need to specify additional verification logic. After creating the instance of `SSLService`, you can set the instance variable `verifyCallback`.  This instance variable has the following signature:
+```
+public var verifyCallback: ((_ service: SSLService) -> (Bool, String?))? = nil
+```
+Setting this callback is not required. It defaults to `nil` unless set.  The first parameter passed to your callback is the instance of `SSLService` that has this callback.  This will allow you to access the public members of the `SSLService` instance in order to do additional verification.  Upon completion, your callback should return a tuple.  The first value is a `Bool` indicating the sucess or failure of the routine.  The second value is an `optional String` value used to provide a description in the case where verification failed. In the event of callback failure, an `exception` will be thrown by the internal verification function.  **Important Note:** To effectively use this callback requires knowledge of the platforms underlying secure transport service, `Apple Secure Transport` on `macOS` and `OpenSSL` on `Linux`.

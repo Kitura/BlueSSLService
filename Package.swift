@@ -23,10 +23,25 @@ import PackageDescription
 	let url = "https://github.com/IBM-Swift/OpenSSL.git"
 	let majorVersion = 0
 	let minorVersion = 2
-#elseif os(macOS)
-	let url = "https://github.com/IBM-Swift/OpenSSL-OSX.git"
-	let majorVersion = 0
-	let minorVersion = 3
+	
+	let package = Package(
+		name: "SSLService",
+		targets: [Target(name: "SSLService")],
+		dependencies: [
+			.Package(url: url, majorVersion: majorVersion, minor: minorVersion),
+			.Package(url: "https://github.com/IBM-Swift/BlueSocket.git", majorVersion: 0, minor: 11),
+		],
+		exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]
+	)
+#elseif os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+	let package = Package(
+		name: "SSLService",
+		targets: [Target(name: "SSLService")],
+		dependencies: [
+			.Package(url: "https://github.com/IBM-Swift/BlueSocket.git", majorVersion: 0, minor: 11),
+			],
+		exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]
+	)
 #else
 	fatalError("Unsupported OS")
 #endif
