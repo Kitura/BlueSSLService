@@ -402,10 +402,31 @@ public class SSLService : SSLServiceDelegate {
 				throw SSLError.fail(Int(ECONNABORTED), reason)
 			}
 			
-			try self.throwLastError(source: "SSL_write")
-			return 0
-		}
-		return Int(rc)
+			let rc = SSL_write(sslConnect, buffer, Int32(bufSize))
+			if rc < 0 {
+				
+				try self.throwLastError(source: "SSL_write")
+				return 0
+			}
+			return Int(rc)
+			
+		#else
+			
+			guard let sslContext = self.context else {
+				
+				let reason = "ERROR: SSL_write, code: \(ECONNABORTED), reason: Unable to reference connection)"
+				throw SSLError.fail(Int(ECONNABORTED), reason)
+			}
+			
+			var processed = 0
+			let status: OSStatus = SSLWrite(sslContext, buffer, bufSize, &processed)
+			if status != errSecSuccess && status != errSSLWouldBlock {
+				
+				try self.throwLastError(source: "SSL_write", err: status)
+			}
+			return processed
+			
+		#endif
 	}
 	
 	///
@@ -427,10 +448,32 @@ public class SSLService : SSLServiceDelegate {
 				throw SSLError.fail(Int(ECONNABORTED), reason)
 			}
 			
-			try self.throwLastError(source: "SSL_read")
-			return 0
-		}
-		return Int(rc)
+			let rc = SSL_read(sslConnect, buffer, Int32(bufSize))
+			if rc < 0 {
+				
+				try self.throwLastError(source: "SSL_read")
+				return 0
+			}
+			return Int(rc)
+			
+		#else
+			
+			guard let sslContext = self.context else {
+				
+				let reason = "ERROR: SSLRead, code: \(ECONNABORTED), reason: Unable to reference connection)"
+				throw SSLError.fail(Int(ECONNABORTED), reason)
+			}
+			
+			var processed = 0
+			let status: OSStatus = SSLRead(sslContext, buffer, bufSize, &processed)
+			if status != errSecSuccess && status != errSSLWouldBlock {
+				
+				try self.throwLastError(source: "SSLRead", err: status)
+			}
+			
+			return processed
+			
+		#endif
 	}
 	
 	// MARK: Private Methods
@@ -555,19 +598,8 @@ public class SSLService : SSLServiceDelegate {
 				throw SSLError.fail(Int(ENOMEM), reason)
 			}
 			
-			let reason = "ERROR: Unable to create SSL context."
-			throw SSLError.fail(Int(ENOMEM), reason)
-		}
-		
-		// Handle the stuff common to both client and server...
-		SSL_CTX_set_cipher_list(context, self.configuration.cipherSuite)
-		if self.configuration.certsAreSelfSigned {
-			SSL_CTX_set_verify(context, SSL_VERIFY_NONE, nil)
-		}
-		SSL_CTX_set_verify_depth(context, DEFAULT_VERIFY_DEPTH)
-		
-		// Then handle the client/server specific stuff...
-		if !self.isServer {
+			// Now we can create the context...
+			self.context = SSL_CTX_new(method)
 			
 			guard let context = self.context else {
 				
@@ -862,15 +894,17 @@ public class SSLService : SSLServiceDelegate {
 				
 			}
 			
-			// If we're here, we've got an error...
-			let reason = "ERROR: verifyConnection, code: \(rc), reason: Unable to verify presented peer certificate."
-			throw SSLError.fail(Int(ECONNABORTED), reason)
+			// If we're a client, we need to see the certificate and verify it...
+			//	Otherwise, if we're a server we may or may not be presented one. If we get one however, we must verify it...
+			if !self.isServer {
+				
+				let reason = "ERROR: verifyConnection, code: \(ECONNABORTED), reason: Peer certificate was not presented."
+				throw SSLError.fail(Int(ECONNABORTED), reason)
+			}
 			
-		}
+		#endif
 		
-		// If we're a client, we need to see the certificate and verify it...
-		//	Otherwise, if we're a server we may or may not be presented one. If we get one however, we must verify it...
-		if !self.isServer {
+		if let callback = self.verifyCallback {
 			
 			let (passed, failReason) = callback(self)
 			if passed {
@@ -893,12 +927,6 @@ public class SSLService : SSLServiceDelegate {
 	///
 	private func throwLastError(source: String, err: OSStatus = 0) throws {
 		
-		let err = ERR_get_error()
-		
-		// If we don't get an error back, there's no error so just return...
-		if err == 0 {
-			return
-		}
 		var errorString: String
 		
 		#if os(Linux)

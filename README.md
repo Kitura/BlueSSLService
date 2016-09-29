@@ -7,7 +7,7 @@
 # BlueSSLService
 
 ## Overview
-SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.git) in Swift using the Swift Package Manager. Works on macOS and Linux.
+SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.git) in Swift using the Swift Package Manager. Works on macOS (using Secure Transport) and Linux (using OpenSSL).
 
 ## Contents
 
@@ -23,7 +23,7 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 
 * macOS 10.11.6 (*El Capitan*) or higher
 * Xcode Version 8.0 (8A218a) or higher using one of the above toolchains (*Recommended*)
-* OpenSSL: openssl-1.0.2g or higher.  Available via `brew install openssl`.
+* Secure Transport is provided by macOS.
 
 ### Linux
 
