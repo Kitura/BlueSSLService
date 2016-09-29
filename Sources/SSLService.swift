@@ -323,6 +323,9 @@ public class SSLService : SSLServiceDelegate {
 				SSLClose(self.context!)
 			}
 			
+			// Free the socket pointer...
+			self.socketPtr.deallocate(capacity: 1)
+			
 		#endif
 	}
 	
