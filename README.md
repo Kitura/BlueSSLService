@@ -11,7 +11,7 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 
 ## Contents
 
-* SSLService: Adds SSL/TLS support to **BlueSocket**. Pure Swift. 
+* SSLService: Adds SSL/TLS support to [BlueSocket](https://github.com/IBM-Swift/BlueSocket). Pure Swift. 
 
 ## Prerequisites
 
@@ -94,7 +94,7 @@ Both clients and server require at a minimum the following configuration items:
 
 #### Example
 
-The following illustrates creating a configuration using the second form of the API above using a self-signed certificate file as the key file and not supplying a certificate chain file.  It also illustrates setting the cipher suite to `ALL` from the default:
+The following illustrates creating a configuration (on *Linux*) using the second form of the API above using a self-signed certificate file as the key file and not supplying a certificate chain file.  It also illustrates setting the cipher suite to `ALL` from the default:
 ```swift
 import SSLService
 
@@ -110,14 +110,14 @@ myConfig.cipherSuite = "ALL"
 ...
 
 ```
-*Note:* This example takes advantage of the `default` parameters available on the `SSLService.Configuration.init` function.
+*Note:* This example takes advantage of the `default` parameters available on the `SSLService.Configuration.init` function. Also, changing of the `cipher suite` on *macOS* is currently not supported.
 
 ### Creating and using the SSLService
 
 The following API is used to create the `SSLService`:
 - `init?(usingConfiguration config: Configuration) throws` - This will create an instance of the `SSLService` using a previously created `Configuration`.
 
-Once the `SSLService` is created, it can applied to a previously created `Socket` instance that's just been created. This needs to be done **before** using the `Socket`. The following code snippet illustrates how to do this.  *Note: Exception handling omitted for brevity.*
+Once the `SSLService` is created, it can applied to a previously created `Socket` instance that's just been created. This needs to be done **before** using the `Socket`. The following code snippet illustrates how to do this (again using *Linux*).  *Note: Exception handling omitted for brevity.*
 
 ```swift
 
