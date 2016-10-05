@@ -159,8 +159,12 @@ try socket.connect(to: "someplace.org", port: 1337)
 
 ### Extending Connection Verification
 
-`SSLService` provides a callback mechanism should you need to specify additional verification logic. After creating the instance of `SSLService`, you can set the instance variable `verifyCallback`.  This instance variable has the following signature:
+`SSLService` provides a callback mechanism should you need to specify **additional** verification logic. After creating the instance of `SSLService`, you can set the instance variable `verifyCallback`.  This instance variable has the following signature:
 ```
 public var verifyCallback: ((_ service: SSLService) -> (Bool, String?))? = nil
 ```
 Setting this callback is not required. It defaults to `nil` unless set.  The first parameter passed to your callback is the instance of `SSLService` that has this callback.  This will allow you to access the public members of the `SSLService` instance in order to do additional verification.  Upon completion, your callback should return a tuple.  The first value is a `Bool` indicating the sucess or failure of the routine.  The second value is an `optional String` value used to provide a description in the case where verification failed. In the event of callback failure, an `exception` will be thrown by the internal verification function.  **Important Note:** To effectively use this callback requires knowledge of the platforms underlying secure transport service, `Apple Secure Transport` on `macOS` and `OpenSSL` on `Linux`.
+
+### Skipping Connection Verification
+
+If desired, `SSLService` can *skip* the connection verification.  To accomplish this, set the property `skipVerification` to `true` after creating the `SSLService` instance.  However, if the `verifyCallback` property (described above) is set, that callback will be called regardless of this setting. The default for property is false.  It is **NOT** recommended that you skip the connection verification in a `production` environment unless you are providing verification via the `verificationCallback`.

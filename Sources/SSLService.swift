@@ -179,13 +179,16 @@ public class SSLService : SSLServiceDelegate {
 	// MARK: --- Settable
 	
 	///
-	/// Verification Callback. Called by the internal `verifyConnection()` function to do any additional connection verification.  This callback is set after initializing the `SSLService`.
+	/// Verification Callback. Called by the internal `verifyConnection()` function to do any *additional* connection verification.  This property is set after initializing the `SSLService`.
 	///
 	/// - Parameters service:	This service module
 	///
 	/// - Returns:	Tuple containing a `Bool` to indicate success or failure of the verification and a `String?` containing text describing the error if desired.
 	///
 	public var verifyCallback: ((_ service: SSLService) -> (Bool, String?))? = nil
+	
+	/// If true, skips the internal verification.  However, if the `verifyCallback` property is set, the callback will be called regardless of this setting. Default is false. This property is set after initializing the `SSLService`.
+	public var skipVerification: Bool = false
 	
 	// MARK: --- Read Only
 	
@@ -877,56 +880,61 @@ public class SSLService : SSLServiceDelegate {
 	///
 	private func verifyConnection() throws {
 		
-		// Skip the verification if we're using self-signed certs and we're a server...
-		if self.configuration.certsAreSelfSigned && self.isServer {
-			return
+		// Skip the verification if the skipVerification flag is set...
+		if self.skipVerification {
+		
+			// Skip the verification if we're using self-signed certs and we're a server...
+			if self.configuration.certsAreSelfSigned && self.isServer {
+				return
+			}
+		
+			#if os(Linux)
+			
+				// Standard Linux verification...
+				guard let sslConnect = self.cSSL else {
+				
+					let reason = "ERROR: verifyConnection, code: \(ECONNABORTED), reason: Unable to reference connection)"
+					throw SSLError.fail(Int(ECONNABORTED), reason)
+				}
+			
+				if SSL_get_peer_certificate(sslConnect) != nil {
+				
+					let rc = SSL_get_verify_result(sslConnect)
+					switch rc {
+					
+					case Int(X509_V_OK):
+						return
+					case Int(X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT), Int(X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY):
+						if self.configuration.certsAreSelfSigned {
+							return
+						}
+					default:
+						break
+					}
+				
+					// If we're here, we've got an error...
+					let reason = "ERROR: verifyConnection, code: \(rc), reason: Unable to verify presented peer certificate."
+					throw SSLError.fail(Int(ECONNABORTED), reason)
+				
+				}
+			
+				// If we're a client, we need to see the certificate and verify it...
+				//	Otherwise, if we're a server we may or may not be presented one. If we get one however, we must verify it...
+				if !self.isServer {
+				
+					let reason = "ERROR: verifyConnection, code: \(ECONNABORTED), reason: Peer certificate was not presented."
+					throw SSLError.fail(Int(ECONNABORTED), reason)
+				}
+			
+			#else
+			
+				// @FIXME: No standard verification on macOS yet...
+			
+			#endif
+			
 		}
 		
-		#if os(Linux)
-			
-			// Standard Linux verification...
-			guard let sslConnect = self.cSSL else {
-				
-				let reason = "ERROR: verifyConnection, code: \(ECONNABORTED), reason: Unable to reference connection)"
-				throw SSLError.fail(Int(ECONNABORTED), reason)
-			}
-			
-			if SSL_get_peer_certificate(sslConnect) != nil {
-				
-				let rc = SSL_get_verify_result(sslConnect)
-				switch rc {
-					
-				case Int(X509_V_OK):
-					return
-				case Int(X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT), Int(X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY):
-					if self.configuration.certsAreSelfSigned {
-						return
-					}
-				default:
-					break
-				}
-				
-				// If we're here, we've got an error...
-				let reason = "ERROR: verifyConnection, code: \(rc), reason: Unable to verify presented peer certificate."
-				throw SSLError.fail(Int(ECONNABORTED), reason)
-				
-			}
-			
-			// If we're a client, we need to see the certificate and verify it...
-			//	Otherwise, if we're a server we may or may not be presented one. If we get one however, we must verify it...
-			if !self.isServer {
-				
-				let reason = "ERROR: verifyConnection, code: \(ECONNABORTED), reason: Peer certificate was not presented."
-				throw SSLError.fail(Int(ECONNABORTED), reason)
-			}
-			
-		#else
-			
-			// @FIXME: No standard verification on macOS yet...
-			
-		#endif
-		
-		// Do any additional caller defined verification...
+		// Always do any additional caller defined verification...
 		
 		// If a callback to do additional verification is present, execute the callback now...
 		if let callback = self.verifyCallback {
