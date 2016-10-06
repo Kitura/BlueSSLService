@@ -789,7 +789,7 @@ public class SSLService : SSLServiceDelegate {
 			let eCipherSuites : UnsafeMutablePointer<SSLCipherSuite> = UnsafeMutablePointer.allocate(capacity: eSize)
 			for i in 0..<cipherlist.count {
 				
-				eCipherSuites.advanced(by: i).pointee = UInt32(cipherlist[i] , radix: 16)!
+				eCipherSuites.advanced(by: i).pointee = SSLCipherSuite(cipherlist[i] , radix: 16)!
 			}
 			
 			//	- Enable the desired ciphers...
