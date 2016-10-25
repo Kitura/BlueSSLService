@@ -19,6 +19,26 @@
 // 	limitations under the License.
 //
 
+//
+// Below are swiftlint disabled rules:
+// swiftlint:disable trailing_newline
+// swiftlint:disable force_cast
+// swiftlint:disable variable_name_min_length
+// swiftlint:disable function_body_length
+// swiftlint:disable variable_name
+// swiftlint:disable variable_name_max_length
+// swiftlint:disable line_length
+// swiftlint:disable trailing_whitespace
+// swiftlint:disable type_name
+// swiftlint:disable type_body_length
+// swiftlint:disable todo
+// swiftlint:disable file_length
+// swiftlint:disable leading_whitespace
+// swiftlint:disable mark
+// swiftlint:disable function_parameter_count
+// swiftlint:disable cyclomatic_complexity
+//
+
 import Foundation
 import Socket
 
@@ -31,7 +51,7 @@ import Socket
 ///
 /// SSL Service Plugin for Socket using **Apple Secure Transport** on `macOS` and **OpenSSL** on `Linux`.
 ///
-public class SSLService : SSLServiceDelegate {
+public class SSLService: SSLServiceDelegate {
 	
 	// MARK: Statics
 	
@@ -701,13 +721,13 @@ public class SSLService : SSLServiceDelegate {
 				guard NSData(contentsOfFile: chainPath) != nil else {
 					
 					let reason = "ERROR: Error reading PKCS12 file"
-					throw SSLError.fail(Int(ENOENT),reason)
+					throw SSLError.fail(Int(ENOENT), reason)
 				}
 				
 			} else {
 				
 				let reason = "ERROR: Error reading PKCS12 file"
-				throw SSLError.fail(Int(ENOENT),reason)
+				throw SSLError.fail(Int(ENOENT), reason)
 			}
 			
 			// Create the context...
@@ -727,7 +747,7 @@ public class SSLService : SSLServiceDelegate {
 			guard let certFile = configuration.certificateChainFilePath else {
 				
 				let reason = "ERROR: No PKCS12 file"
-				throw SSLError.fail(Int(ENOENT),reason)
+				throw SSLError.fail(Int(ENOENT), reason)
 			}
 			
 			// 	- Now load them...
@@ -735,14 +755,14 @@ public class SSLService : SSLServiceDelegate {
 			guard let p12Data = NSData(contentsOfFile: certFile) else {
 				
 				let reason = "ERROR: Error reading PKCS12 file"
-				throw SSLError.fail(Int(ENOENT),reason)
+				throw SSLError.fail(Int(ENOENT), reason)
 			}
 			
 			// 	- Create key dictionary for reading p12 file...
 			guard let passwd: String = self.configuration.password else {
 				
 				let reason = "ERROR: No password for PKCS12 file"
-				throw SSLError.fail(Int(ENOENT),reason)
+				throw SSLError.fail(Int(ENOENT), reason)
 			}
 			let key: NSString = kSecImportExportPassphrase as NSString
 			let options: NSDictionary = [key: passwd as AnyObject]
@@ -766,7 +786,7 @@ public class SSLService : SSLServiceDelegate {
 			guard let secIdentity = secIdentityRef else {
 				
 				let reason = "ERROR: Can't extract identity."
-				throw SSLError.fail(Int(ENOENT),reason)
+				throw SSLError.fail(Int(ENOENT), reason)
 			}
 			
 			//	-- Cert chain...
@@ -786,10 +806,10 @@ public class SSLService : SSLServiceDelegate {
 			//	- Setup the cipher list...
 			let cipherlist = configuration.cipherSuite.components(separatedBy: ",")
 			let eSize = cipherlist.count * MemoryLayout<SSLCipherSuite>.size
-			let eCipherSuites : UnsafeMutablePointer<SSLCipherSuite> = UnsafeMutablePointer.allocate(capacity: eSize)
+			let eCipherSuites: UnsafeMutablePointer<SSLCipherSuite> = UnsafeMutablePointer.allocate(capacity: eSize)
 			for i in 0..<cipherlist.count {
 				
-				eCipherSuites.advanced(by: i).pointee = SSLCipherSuite(cipherlist[i] , radix: 16)!
+				eCipherSuites.advanced(by: i).pointee = SSLCipherSuite(cipherlist[i], radix: 16)!
 			}
 			
 			//	- Enable the desired ciphers...
