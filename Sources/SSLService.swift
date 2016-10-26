@@ -29,7 +29,7 @@ import Socket
 // MARK: SSLService
 
 ///
-/// SSL Service Plugin for Socket using **Apple Secure Transport** on `macOS` and **OpenSSL** on `Linux`.
+/// **SSLService:** SSL Service Plugin for Socket using **Apple Secure Transport** on `macOS` and **OpenSSL** on `Linux`.
 ///
 public class SSLService: SSLServiceDelegate {
 	

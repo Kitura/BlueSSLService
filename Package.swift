@@ -20,6 +20,7 @@
 import PackageDescription
 
 #if os(Linux)
+	
 	let url = "https://github.com/IBM-Swift/OpenSSL.git"
 	let majorVersion = 0
 	let minorVersion = 2
@@ -33,7 +34,9 @@ import PackageDescription
 		],
 		exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]
 	)
-#elseif os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+	
+#elseif os(macOS)
+	
 	let package = Package(
 		name: "SSLService",
 		targets: [Target(name: "SSLService")],
@@ -42,6 +45,9 @@ import PackageDescription
 			],
 		exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]
 	)
+	
 #else
+	
 	fatalError("Unsupported OS")
+	
 #endif
