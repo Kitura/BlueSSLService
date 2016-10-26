@@ -19,32 +19,22 @@
 
 import PackageDescription
 
-#if os(Linux)
-	
-	let url = "https://github.com/IBM-Swift/OpenSSL.git"
-	let majorVersion = 0
-	let minorVersion = 2
-	
-	let package = Package(
-		name: "SSLService",
-		targets: [Target(name: "SSLService")],
-		dependencies: [
-			.Package(url: url, majorVersion: majorVersion, minor: minorVersion),
-			.Package(url: "https://github.com/IBM-Swift/BlueSocket.git", majorVersion: 0, minor: 11),
-		],
-		exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]
-	)
-	
-#elseif os(macOS)
-	
+#if os(Linux) || os(macOS)
+
 	let package = Package(
 		name: "SSLService",
 		targets: [Target(name: "SSLService")],
 		dependencies: [
 			.Package(url: "https://github.com/IBM-Swift/BlueSocket.git", majorVersion: 0, minor: 11),
 			],
-		exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]
-	)
+		exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"])
+		
+	#if os(Linux)
+		
+		package.dependencies.append(
+			.Package(url: "https://github.com/IBM-Swift/OpenSSL.git", majorVersion: 0, minor: 2))
+		
+	#endif
 	
 #else
 	
