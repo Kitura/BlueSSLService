@@ -979,7 +979,12 @@ public class SSLService: SSLServiceDelegate {
 			}
 			
 		#else
-			
+
+			// If no error, just return...
+			if err == errSecSuccess {
+				return
+			}
+
 			if let val = SecureTransportErrors[err] {
 				errorString = val
 			} else {
