@@ -484,12 +484,12 @@ public class SSLService: SSLServiceDelegate {
 			
 			var processed = 0
 			let status: OSStatus = SSLRead(sslContext, buffer, bufSize, &processed)
-			if status != errSecSuccess && status != errSSLWouldBlock {
+			if status != errSecSuccess && status != errSSLWouldBlock && status != errSSLClosedGraceful {
 				
 				try self.throwLastError(source: "SSLRead", err: status)
 			}
 			
-			return processed
+			return status == errSSLClosedGraceful ? 0 : processed
 			
 		#endif
 	}
