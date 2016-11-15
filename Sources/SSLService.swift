@@ -626,6 +626,7 @@ public class SSLService: SSLServiceDelegate {
 			}
 			
 			// Handle the stuff common to both client and server...
+			SSL_CTX_ctrl(context, SSL_CTRL_MODE, SSL_MODE_AUTO_RETRY, nil)
 			SSL_CTX_set_cipher_list(context, self.configuration.cipherSuite)
 			if self.configuration.certsAreSelfSigned {
 				SSL_CTX_set_verify(context, SSL_VERIFY_NONE, nil)
