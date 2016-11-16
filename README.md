@@ -34,7 +34,7 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 
 ### Package Dependencies
 
-* BlueSocket v0.10.0 or higher
+* BlueSocket v0.12.0 or higher
 * OpenSSL v0.2.0 or higher for Linux
 
 *Note:* See `Package.swift` for details.
