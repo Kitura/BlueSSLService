@@ -120,15 +120,19 @@ public class SSLService: SSLServiceDelegate {
 		///		- certificateFilePath:		Path to the PEM formatted certificate file.
 		///		- keyFilePath:				Path to the PEM formatted key file. If nil, `certificateFilePath` will be used.
 		///		- selfSigned:				True if certs are `self-signed`, false otherwise. Defaults to true.
+		///		- cipherSuite:				Optional String containing the cipher suite to use.
 		///
 		///	- Returns:	New Configuration instance.
 		///
-		public init(withCACertificateFilePath caCertificateFilePath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true) {
+		public init(withCACertificateFilePath caCertificateFilePath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true, cipherSuite: String? = nil) {
 			
 			self.certificateFilePath = certificateFilePath
 			self.keyFilePath = keyFilePath ?? certificateFilePath
 			self.certsAreSelfSigned = selfSigned
 			self.caCertificateFilePath = caCertificateFilePath
+			if cipherSuite != nil {
+				self.cipherSuite = cipherSuite!
+			}
 		}
 		
 		///
@@ -141,15 +145,19 @@ public class SSLService: SSLServiceDelegate {
 		///		- certificateFilePath:		Path to the PEM formatted certificate file. If nil, `certificateFilePath` will be used.
 		///		- keyFilePath:				Path to the PEM formatted key file (optional). If nil, `certificateFilePath` is used.
 		///		- selfSigned:				True if certs are `self-signed`, false otherwise. Defaults to true.
+		///		- cipherSuite:				Optional String containing the cipher suite to use.
 		///
 		///	- Returns:	New Configuration instance.
 		///
-		public init(withCACertificateDirectory caCertificateDirPath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true) {
+		public init(withCACertificateDirectory caCertificateDirPath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true, cipherSuite: String? = nil) {
 			
 			self.certificateFilePath = certificateFilePath
 			self.keyFilePath = keyFilePath ?? certificateFilePath
 			self.certsAreSelfSigned = selfSigned
 			self.caCertificateDirPath = caCertificateDirPath
+			if cipherSuite != nil {
+				self.cipherSuite = cipherSuite!
+			}
 		}
 		
 		///
@@ -161,14 +169,18 @@ public class SSLService: SSLServiceDelegate {
 		///		- chainFilePath:			Path to the certificate chain file (optional). *(see note above)*
 		///		- password:					Password for the chain file (optional).
 		///		- selfSigned:				True if certs are `self-signed`, false otherwise. Defaults to true.
+		///		- cipherSuite:				Optional String containing the cipher suite to use.
 		///
 		///	- Returns:	New Configuration instance.
 		///
-		public init(withChainFilePath chainFilePath: String? = nil, withPassword password: String? = nil, usingSelfSignedCerts selfSigned: Bool = true) {
+		public init(withChainFilePath chainFilePath: String? = nil, withPassword password: String? = nil, usingSelfSignedCerts selfSigned: Bool = true, cipherSuite: String? = nil) {
 			
 			self.certificateChainFilePath = chainFilePath
 			self.password = password
 			self.certsAreSelfSigned = selfSigned
+			if cipherSuite != nil {
+				self.cipherSuite = cipherSuite!
+			}
 		}
 	}
 	
@@ -423,6 +435,11 @@ public class SSLService: SSLServiceDelegate {
 			let rc = SSL_write(sslConnect, buffer, Int32(bufSize))
 			if rc < 0 {
 				
+				if rc == SSL_ERROR_WANT_READ || rc == SSL_ERROR_WANT_WRITE {
+					
+					throw SSLError.retryNeeded
+				}
+				
 				try self.throwLastError(source: "SSL_write")
 				return 0
 			}
@@ -468,6 +485,11 @@ public class SSLService: SSLServiceDelegate {
 			
 			let rc = SSL_read(sslConnect, buffer, Int32(bufSize))
 			if rc < 0 {
+				
+				if rc == SSL_ERROR_WANT_READ || rc == SSL_ERROR_WANT_WRITE {
+					
+					throw SSLError.retryNeeded
+				}
 				
 				try self.throwLastError(source: "SSL_read")
 				return 0
