@@ -99,8 +99,8 @@ public class SSLService: SSLServiceDelegate {
 		public private(set) var certsAreSelfSigned = false
 		
 		#if os(Linux)
-			/// Cipher suites to use. Defaults to `ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL`
-			public var cipherSuite: String = "ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL"
+			/// Cipher suites to use. Defaults to `DEFAULT`
+			public var cipherSuite: String = "DEFAULT"
 		#else
 			/// Cipher suites to use. Defaults to `14,13,2B,2F,2C,30,9E,9F,23,27,09,28,13,24,0A,14,67,33,6B,39,08,12,16,9C,9D,3C,3D,2F,35,0A`
 			// @FIXME: This isn't quite right, needs to be revisited.

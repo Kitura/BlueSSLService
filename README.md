@@ -89,7 +89,7 @@ Both clients and server require at a minimum the following configuration items:
 
 *Note 3:* For the first two versions of the API, if your `Private key` is included in your certificate file, you can omit this parameter and the API will use the same file name as specified for the certificate file.
 
-*Note 4:* If you desire to customize the cipher suite used, you can do so by specifying the `cipherSuite` parameter when using one of the above initializers.  If not specified, the default value is set to `ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL` on Linux. On macOS, setting of this parameter is currently not supported and attempting to set it will result in unpredictable results.  See the example below.
+*Note 4:* If you desire to customize the cipher suite used, you can do so by specifying the `cipherSuite` parameter when using one of the above initializers.  If not specified, the default value is set to `DEFAULT` on Linux. On macOS, setting of this parameter is currently not supported and attempting to set it will result in unpredictable results.  See the example below.
 
 *Note 5:* If you're running on macOS, you must use the third form of `init` for the `Configuration` and provide a certificate chain file in `PKCS12` format, supplying a `password` if needed.
 
