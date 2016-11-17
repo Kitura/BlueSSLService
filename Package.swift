@@ -32,7 +32,7 @@ import PackageDescription
 	#if os(Linux)
 		
 		package.dependencies.append(
-			.Package(url: "https://github.com/IBM-Swift/OpenSSL.git", majorVersion: 0, minor: 2))
+			.Package(url: "https://github.com/IBM-Swift/COpenSSL.git", majorVersion: 0, minor: 3))
 		
 	#endif
 	
