@@ -665,7 +665,7 @@ public class SSLService: SSLServiceDelegate {
 			//	Note: We've already verified the configuration, so we've at least got the minimum requirements.
 			// 	- First process the CA certificate(s) if any...
 			var rc: Int32 = 0
-			if configuration.caCertificateFilePath != nil || configuration.caCertificateDirPath != nil {
+			if self.configuration.caCertificateFilePath != nil || self.configuration.caCertificateDirPath != nil {
 				
 				let caFile = self.configuration.caCertificateFilePath
 				let caPath = self.configuration.caCertificateDirPath
