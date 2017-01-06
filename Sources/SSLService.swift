@@ -49,16 +49,17 @@ public class SSLService: SSLServiceDelegate {
 	
 		/// String representation of Secure Transport Errors
 		let SecureTransportErrors: [OSStatus: String] 	= [
-			errSecSuccess       : "errSecSuccess",
-			errSSLNegotiation   : "errSSLNegotiation",
-			errSecParam         : "errSecParam",
-			errSSLClosedAbort   : "errSSLClosedAbort",
-			errSecIO            : "errSecIO",
-			errSSLWouldBlock    : "errSSLWouldBlock",
-			errSSLPeerUnknownCA : "errSSLPeerUnknownCA",
-			errSSLBadRecordMac  : "errSSLBadRecordMac",
-			errSecAuthFailed    : "errSecAuthFailed",
-			errSSLClosedGraceful: "errSSLClosedGraceful"
+			errSecSuccess       	: "errSecSuccess",
+			errSSLNegotiation   	: "errSSLNegotiation",
+			errSecParam         	: "errSecParam",
+			errSSLClosedAbort   	: "errSSLClosedAbort",
+			errSecIO            	: "errSecIO",
+			errSSLWouldBlock    	: "errSSLWouldBlock",
+			errSSLPeerUnknownCA 	: "errSSLPeerUnknownCA",
+			errSSLBadRecordMac  	: "errSSLBadRecordMac",
+			errSecAuthFailed    	: "errSecAuthFailed",
+			errSSLClosedGraceful	: "errSSLClosedGraceful",
+			errSSLXCertChainInvalid	: "errSSLXCertChainInvalid"
 		]
 	
 	#endif
@@ -109,6 +110,9 @@ public class SSLService: SSLServiceDelegate {
 		
 		/// Password (if needed) typically used for PKCS12 files.
 		public var password: String? = nil
+		
+		/// True if no backing certificates provided (Readonly).
+		public private(set) var noBackingCertificates = false
 		
 		// MARK: Lifecycle
 		
@@ -178,6 +182,22 @@ public class SSLService: SSLServiceDelegate {
 			self.certificateChainFilePath = chainFilePath
 			self.password = password
 			self.certsAreSelfSigned = selfSigned
+			if cipherSuite != nil {
+				self.cipherSuite = cipherSuite!
+			}
+		}
+		
+		///
+		/// Initialize a configuration with no backing certificates.
+		///
+		/// - Parameters:
+		///		- cipherSuite:				Optional String containing the cipher suite to use.
+		///
+		///	- Returns:	New Configuration instance.
+		///
+		public init(withCipherSuite cipherSuite: String?) {
+			
+			self.noBackingCertificates = true
 			if cipherSuite != nil {
 				self.cipherSuite = cipherSuite!
 			}
@@ -525,6 +545,11 @@ public class SSLService: SSLServiceDelegate {
 	///
 	private func validate(configuration: Configuration) throws {
 		
+		// Skip validation if no backing certificates provided...
+		if configuration.noBackingCertificates {
+			return
+		}
+		
 		#if os(Linux)
 			
 			// If we're using self-signed certs, we only require a certificate and key...
@@ -718,19 +743,22 @@ public class SSLService: SSLServiceDelegate {
 			
 			//	Note: We've already verified the configuration, so we've at least got the minimum requirements.
 			
-			//	- Must have certificate chain path...
-			if let chainPath = configuration.certificateChainFilePath {
+			if configuration.noBackingCertificates == false {
 				
-				guard NSData(contentsOfFile: chainPath) != nil else {
+				//	- Must have certificate chain path...
+				if let chainPath = configuration.certificateChainFilePath {
+					
+					guard NSData(contentsOfFile: chainPath) != nil else {
+						
+						let reason = "ERROR: Error reading PKCS12 file"
+						throw SSLError.fail(Int(ENOENT), reason)
+					}
+					
+				} else {
 					
 					let reason = "ERROR: Error reading PKCS12 file"
 					throw SSLError.fail(Int(ENOENT), reason)
 				}
-				
-			} else {
-				
-				let reason = "ERROR: Error reading PKCS12 file"
-				throw SSLError.fail(Int(ENOENT), reason)
 			}
 			
 			// Create the context...
@@ -746,64 +774,68 @@ public class SSLService: SSLServiceDelegate {
 			//	- Setup our read and write callbacks...
 			SSLSetIOFuncs(sslContext, sslReadCallback, sslWriteCallback)
 			
-			//	- Ensure we've got the certificates...
-			guard let certFile = configuration.certificateChainFilePath else {
-				
-				let reason = "ERROR: No PKCS12 file"
-				throw SSLError.fail(Int(ENOENT), reason)
-			}
-			
-			// 	- Now load them...
 			var status: OSStatus
-			guard let p12Data = NSData(contentsOfFile: certFile) else {
+			if configuration.noBackingCertificates == false {
 				
-				let reason = "ERROR: Error reading PKCS12 file"
-				throw SSLError.fail(Int(ENOENT), reason)
-			}
-			
-			// 	- Create key dictionary for reading p12 file...
-			guard let passwd: String = self.configuration.password else {
+				//	- Ensure we've got the certificates...
+				guard let certFile = configuration.certificateChainFilePath else {
+					
+					let reason = "ERROR: No PKCS12 file"
+					throw SSLError.fail(Int(ENOENT), reason)
+				}
 				
-				let reason = "ERROR: No password for PKCS12 file"
-				throw SSLError.fail(Int(ENOENT), reason)
-			}
-			let key: NSString = kSecImportExportPassphrase as NSString
-			let options: NSDictionary = [key: passwd as AnyObject]
-			
-			var items: CFArray? = nil
-			
-			// 	- Import the PKCS12 file...
-			status = SecPKCS12Import(p12Data, options, &items)
-			if status != errSecSuccess {
+				// 	- Now load them...
+				guard let p12Data = NSData(contentsOfFile: certFile) else {
+					
+					let reason = "ERROR: Error reading PKCS12 file"
+					throw SSLError.fail(Int(ENOENT), reason)
+				}
 				
-				try self.throwLastError(source: "SecPKCS12Import", err: status)
-			}
-			
-			// 	- Now extract what we need...
-			let newArray = items! as [AnyObject] as NSArray
-			let dictionary = newArray.object(at: 0)
-			
-			//	-- Identity reference...
-			var secIdentityRef = (dictionary as AnyObject).value(forKey: kSecImportItemKeyID as String)
-			secIdentityRef = (dictionary as AnyObject).value(forKey: "identity")
-			guard let secIdentity = secIdentityRef else {
+				// 	- Create key dictionary for reading p12 file...
+				guard let passwd: String = self.configuration.password else {
+					
+					let reason = "ERROR: No password for PKCS12 file"
+					throw SSLError.fail(Int(ENOENT), reason)
+				}
+				let key: NSString = kSecImportExportPassphrase as NSString
+				let options: NSDictionary = [key: passwd as AnyObject]
 				
-				let reason = "ERROR: Can't extract identity."
-				throw SSLError.fail(Int(ENOENT), reason)
-			}
-			
-			//	-- Cert chain...
-			var certs = [secIdentity]
-			var ccerts: Array<SecCertificate> = (dictionary as AnyObject).value(forKey: kSecImportItemCertChain as String) as! Array<SecCertificate>
-			for i in 1 ..< ccerts.count {
+				var items: CFArray? = nil
 				
-				certs += [ccerts[i] as AnyObject]
-			}
-			
-			status = SSLSetCertificate(sslContext, certs as CFArray)
-			if status != errSecSuccess {
+				// 	- Import the PKCS12 file...
+				status = SecPKCS12Import(p12Data, options, &items)
+				if status != errSecSuccess {
+					
+					try self.throwLastError(source: "SecPKCS12Import", err: status)
+				}
 				
-				try self.throwLastError(source: "SSLSetCertificate", err: status)
+				// 	- Now extract what we need...
+				let newArray = items! as [AnyObject] as NSArray
+				let dictionary = newArray.object(at: 0)
+				
+				//	-- Identity reference...
+				var secIdentityRef = (dictionary as AnyObject).value(forKey: kSecImportItemKeyID as String)
+				secIdentityRef = (dictionary as AnyObject).value(forKey: "identity")
+				guard let secIdentity = secIdentityRef else {
+					
+					let reason = "ERROR: Can't extract identity."
+					throw SSLError.fail(Int(ENOENT), reason)
+				}
+				
+				//	-- Cert chain...
+				var certs = [secIdentity]
+				var ccerts: Array<SecCertificate> = (dictionary as AnyObject).value(forKey: kSecImportItemCertChain as String) as! Array<SecCertificate>
+				for i in 1 ..< ccerts.count {
+					
+					certs += [ccerts[i] as AnyObject]
+				}
+				
+				status = SSLSetCertificate(sslContext, certs as CFArray)
+				if status != errSecSuccess {
+					
+					try self.throwLastError(source: "SSLSetCertificate", err: status)
+				}
+				
 			}
 			
 			//	- Setup the cipher list...
@@ -836,26 +868,26 @@ public class SSLService: SSLServiceDelegate {
 	///
 	private func prepareConnection(socket: Socket) throws -> UnsafeMutablePointer<SSL> {
 	
-		// Make sure our context is valid...
-		guard let context = self.context else {
+	// Make sure our context is valid...
+	guard let context = self.context else {
 	
-		let reason = "ERROR: Unable to access SSL context."
-			throw SSLError.fail(Int(EFAULT), reason)
-		}
+	let reason = "ERROR: Unable to access SSL context."
+	throw SSLError.fail(Int(EFAULT), reason)
+	}
 	
-		// Now create the connection...
-		self.cSSL = SSL_new(context)
+	// Now create the connection...
+	self.cSSL = SSL_new(context)
 	
-		guard let sslConnect = self.cSSL else {
+	guard let sslConnect = self.cSSL else {
 	
-		let reason = "ERROR: Unable to create SSL connection."
-			throw SSLError.fail(Int(EFAULT), reason)
-		}
+	let reason = "ERROR: Unable to create SSL connection."
+	throw SSLError.fail(Int(EFAULT), reason)
+	}
 	
-		// Set the socket file descriptor...
-		SSL_set_fd(sslConnect, socket.socketfd)
+	// Set the socket file descriptor...
+	SSL_set_fd(sslConnect, socket.socketfd)
 	
-		return sslConnect
+	return sslConnect
 	}
 	
 #else
@@ -902,10 +934,11 @@ public class SSLService: SSLServiceDelegate {
 	/// Do connection verification
 	///
 	private func verifyConnection() throws {
-		
-		// Skip the verification if the skipVerification flag is set...
-		if self.skipVerification {
-		
+
+		// Only do verification if the skip verification flag is off and...
+		// 	we have backing certificates...
+		if self.skipVerification == false && self.configuration.noBackingCertificates == false {
+			
 			// Skip the verification if we're using self-signed certs and we're a server...
 			if self.configuration.certsAreSelfSigned && self.isServer {
 				return
@@ -927,7 +960,9 @@ public class SSLService: SSLServiceDelegate {
 					
 					case Int(X509_V_OK):
 						return
-					case Int(X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT), Int(X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY):
+					case Int(X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT),
+					     Int(X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY),
+					     Int(X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT):
 						if self.configuration.certsAreSelfSigned {
 							return
 						}
@@ -1002,12 +1037,12 @@ public class SSLService: SSLServiceDelegate {
 			}
 			
 		#else
-
+			
 			// If no error, just return...
 			if err == errSecSuccess {
 				return
 			}
-
+			
 			if let val = SecureTransportErrors[err] {
 				errorString = val
 			} else {
