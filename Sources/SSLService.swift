@@ -348,8 +348,9 @@ public class SSLService: SSLServiceDelegate {
 			}
 			
 			// Finally, finish cleanup...
-			ERR_free_strings()
-			EVP_cleanup()
+			// NOTE: Can't call these due to issues with latest OpenSSL...
+			//ERR_free_strings()
+			//EVP_cleanup()
 			
 		#else
 			
@@ -669,7 +670,8 @@ public class SSLService: SSLServiceDelegate {
 			guard let context = self.context else {
 				
 				let reason = "ERROR: Unable to create SSL context."
-				throw SSLError.fail(Int(ENOMEM), reason)
+				try self.throwLastError(source: reason)
+				return
 			}
 			
 			// Handle the stuff common to both client and server...
@@ -868,26 +870,26 @@ public class SSLService: SSLServiceDelegate {
 	///
 	private func prepareConnection(socket: Socket) throws -> UnsafeMutablePointer<SSL> {
 	
-	// Make sure our context is valid...
-	guard let context = self.context else {
+		// Make sure our context is valid...
+		guard let context = self.context else {
 	
-	let reason = "ERROR: Unable to access SSL context."
-	throw SSLError.fail(Int(EFAULT), reason)
-	}
+			let reason = "ERROR: Unable to access SSL context."
+			throw SSLError.fail(Int(EFAULT), reason)
+		}
 	
-	// Now create the connection...
-	self.cSSL = SSL_new(context)
+		// Now create the connection...
+		self.cSSL = SSL_new(context)
 	
-	guard let sslConnect = self.cSSL else {
+		guard let sslConnect = self.cSSL else {
 	
-	let reason = "ERROR: Unable to create SSL connection."
-	throw SSLError.fail(Int(EFAULT), reason)
-	}
+			let reason = "ERROR: Unable to create SSL connection."
+			throw SSLError.fail(Int(EFAULT), reason)
+		}
 	
-	// Set the socket file descriptor...
-	SSL_set_fd(sslConnect, socket.socketfd)
+		// Set the socket file descriptor...
+		SSL_set_fd(sslConnect, socket.socketfd)
 	
-	return sslConnect
+		return sslConnect
 	}
 	
 #else
