@@ -42,6 +42,10 @@ public class SSLService: SSLServiceDelegate {
 	
 	// MARK: Constants
 	
+	/// PEM Certificate Markers
+	static let PEM_BEGIN_MARKER: String					= "-----BEGIN CERTIFICATE-----"
+	static let PEM_END_MARKER: String					= "-----END CERTIFICATE-----"
+	
 	/// Default verfication depth
 	let DEFAULT_VERIFY_DEPTH: Int32						= 2
 	
@@ -95,6 +99,9 @@ public class SSLService: SSLServiceDelegate {
 		
 		/// Path to the certificate chain file (optional).
 		public private(set) var certificateChainFilePath: String? = nil
+		
+		/// Path to PEM formatted certificate string.
+		public private(set) var certificateString: String? = nil
 		
 		/// True if using `self-signed` certificates.
 		public private(set) var certsAreSelfSigned = false
@@ -186,6 +193,27 @@ public class SSLService: SSLServiceDelegate {
 				self.cipherSuite = cipherSuite!
 			}
 		}
+
+		#if os(Linux)
+		///
+		/// Initialize a configuration using a `PEM formatted certificate in String form`.
+		///
+		/// - Parameters:
+		///		- certificateString:		PEM formatted certificate in String form.
+		///		- selfSigned:				True if certs are `self-signed`, false otherwise. Defaults to true.
+		///		- cipherSuite:				Optional String containing the cipher suite to use.
+		///
+		///	- Returns:	New Configuration instance.
+		///
+		public init(withPEMCertificateString certificateString: String, usingSelfSignedCerts selfSigned: Bool = true, cipherSuite: String? = nil) {
+			
+			self.certificateString = certificateString
+			self.certsAreSelfSigned = selfSigned
+			if cipherSuite != nil {
+				self.cipherSuite = cipherSuite!
+			}
+		}
+		#endif
 		
 		///
 		/// Initialize a configuration with no backing certificates.
@@ -551,6 +579,19 @@ public class SSLService: SSLServiceDelegate {
 			return
 		}
 		
+		// If we have a certificate in string format, check that first...
+		if let certString = configuration.certificateString {
+			
+			// Make sure that string in a valid format...
+			guard certString.hasPrefix(SSLService.PEM_BEGIN_MARKER) &&
+				certString.hasSuffix(SSLService.PEM_END_MARKER) &&
+				certString.utf8.count > 0 else {
+					
+					throw SSLError.fail(Int(ENOENT), "PEM Certificate String is not valid.")
+			}
+			return
+		}
+		
 		#if os(Linux)
 			
 			// If we're using self-signed certs, we only require a certificate and key...
@@ -731,13 +772,26 @@ public class SSLService: SSLServiceDelegate {
 				}
 			}
 			
-			//	- Finally, if present, the certificate chain path...
+			//	- Now, if present, the certificate chain path...
 			if let chainPath = configuration.certificateChainFilePath {
 				
 				rc = SSL_CTX_use_certificate_chain_file(context, chainPath)
 				if rc <= 0 {
 					
 					try self.throwLastError(source: "Certificate chain file")
+				}
+			}
+			
+			//	- Finally, if we have certificate string, process that...
+			if let certString = configuration.certificateString {
+				
+				let bio = BIO_new(BIO_s_mem())
+				BIO_puts(bio, certString)
+				let certificate = PEM_read_bio_X509(bio, nil, nil, nil)
+				rc = SSL_CTX_use_certificate(context, certificate)
+				if rc <= 0 {
+					
+					try self.throwLastError(source: "PEM Certificate String")
 				}
 			}
 			
