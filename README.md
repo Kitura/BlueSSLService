@@ -23,7 +23,7 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 
 * macOS 10.11.6 (*El Capitan*) or higher
 * Xcode Version 8.2 (8C38) or higher using one of the above toolchains (*Recommended*)
-* Secure Transport is provided by macOS.
+* Secure Transport is provided by macOS
 
 ### Linux
 
@@ -33,8 +33,8 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 
 ### Package Dependencies
 
-* BlueSocket v0.12.0 or higher
-* OpenSSL v0.2.0 or higher for Linux
+* BlueSocket v0.12.19 or higher
+* OpenSSL v0.3.1 or higher for Linux
 
 *Note:* See `Package.swift` for details.
 
@@ -85,14 +85,14 @@ Both clients and server require at a minimum the following configuration items:
 
 * No certificate at all.
 
-**BlueSSLService** provides three ways to create a `Configuration`.  These are:
+**BlueSSLService** provides five ways to create a `Configuration` supporting the scenarios above.  These are:
 - `init(withCACertificatePath caCertificateFilePath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true, cipherSuite: String? = nil)` - This API allows you to create a configuration using a self contained `Certificate Authority (CA)` file. The second parameter is the path to the `Certificate` file to be used by application to establish the connection.  The next parameter is the path to the `Private Key` file used by application corresponding to the `Public Key` in the `Certificate`. If you're using `self-signed certificates`, set the last parameter to true.
 - `init(withCACertificateDirectory caCertificateDirPath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true, cipherSuite: String? = nil)` - This API allows you to create a configuration using a directory of `Certificate Authority (CA)` files. These `CA` certificates **must** be hashed using the `Certificate Tool` provided by `OpenSSL`. The following parameters are identical to the previous API.
 - `init(withChainFilePath chainFilePath: String? = nil, withPassword password: String? = nil, usingSelfSignedCerts selfSigned: Bool = true, cipherSuite: String? = nil)` - This API allows you to create a configuration using a single `Certificate Chain File` (see note 2 below). Add an optional password (if required) using the third parameter. Set the third parameter to true if the certificates are `self-signed`, otherwise set it to false.
 - `init(withPEMCertificateString certificateString: String, usingSelfSignedCerts selfSigned: Bool = true, cipherSuite: String? = nil)` - This API used when supplying a PEM formatted certificate presented as a *String*. **NOTE: At present, this API is only available on Linux.**
 - `init(withCipherSuite cipherSuite: String?)` - This API allows for the creation of configuration that does not contain a backing certificate or certificate chain.
 
-*Note 1:* All `Certificate` and `Private Key` files must be `PEM` format.
+*Note 1:* All `Certificate` and `Private Key` files must be `PEM` format. If supplying a certificate via a `String`, it must be PEM formatted. 
 
 *Note 2:* If using a certificate chain file, the certificates must be in `PEM` format and must be sorted starting with the subject's certificate (actual client or server certificate), followed by intermediate `CA` certificates if applicable, and ending at the highest level (root) `CA`.
 
