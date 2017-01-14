@@ -786,6 +786,9 @@ public class SSLService: SSLServiceDelegate {
 			if let certString = configuration.certificateString {
 				
 				let bio = BIO_new(BIO_s_mem())
+				defer {
+					BIO_free(bio)
+				}
 				BIO_puts(bio, certString)
 				let certificate = PEM_read_bio_X509(bio, nil, nil, nil)
 				rc = SSL_CTX_use_certificate(context, certificate)
