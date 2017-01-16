@@ -791,6 +791,10 @@ public class SSLService: SSLServiceDelegate {
 				}
 				BIO_puts(bio, certString)
 				let certificate = PEM_read_bio_X509(bio, nil, nil, nil)
+				if certificate == nil {
+					
+					try self.throwLastError(source: "PEM Certificate String to X509")
+				}
 				rc = SSL_CTX_use_certificate(context, certificate)
 				if rc <= 0 {
 					
