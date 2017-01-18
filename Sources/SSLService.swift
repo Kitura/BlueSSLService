@@ -42,8 +42,12 @@ public class SSLService: SSLServiceDelegate {
 	
 	// MARK: Constants
 	
-	/// PEM Certificate Markers
+	// MARK: PEM Certificate Markers
+	
+	/// PEM Begin Marker
 	static let PEM_BEGIN_MARKER: String					= "-----BEGIN CERTIFICATE-----"
+	
+	/// PEM End Marker
 	static let PEM_END_MARKER: String					= "-----END CERTIFICATE-----"
 	
 	/// Default verfication depth
