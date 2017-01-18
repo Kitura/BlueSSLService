@@ -117,6 +117,8 @@ public class SSLService: SSLServiceDelegate {
 			/// Cipher suites to use. Defaults to `14,13,2B,2F,2C,30,9E,9F,23,27,09,28,13,24,0A,14,67,33,6B,39,08,12,16,9C,9D,3C,3D,2F,35,0A`
 			// @FIXME: This isn't quite right, needs to be revisited.
 			public var cipherSuite: String = "14,13,2B,2F,2C,30,9E,9F,23,27,09,28,13,24,0A,14,67,33,6B,39,08,12,16,9C,9D,3C,3D,2F,35,0A"
+
+			fileprivate var pkcs12Certs: CFArray? = nil
 		#endif
 		
 		/// Password (if needed) typically used for PKCS12 files.
@@ -844,60 +846,65 @@ public class SSLService: SSLServiceDelegate {
 			var status: OSStatus
 			if configuration.noBackingCertificates == false {
 				
-				//	- Ensure we've got the certificates...
-				guard let certFile = configuration.certificateChainFilePath else {
+				if self.configuration.pkcs12Certs == nil {
+					//	- Ensure we've got the certificates...
+					guard let certFile = configuration.certificateChainFilePath else {
+						
+						let reason = "ERROR: No PKCS12 file"
+						throw SSLError.fail(Int(ENOENT), reason)
+					}
 					
-					let reason = "ERROR: No PKCS12 file"
-					throw SSLError.fail(Int(ENOENT), reason)
+					// 	- Now load them...
+					guard let p12Data = NSData(contentsOfFile: certFile) else {
+						
+						let reason = "ERROR: Error reading PKCS12 file"
+						throw SSLError.fail(Int(ENOENT), reason)
+					}
+					
+					// 	- Create key dictionary for reading p12 file...
+					guard let passwd: String = self.configuration.password else {
+						
+						let reason = "ERROR: No password for PKCS12 file"
+						throw SSLError.fail(Int(ENOENT), reason)
+					}
+					let key: NSString = kSecImportExportPassphrase as NSString
+					let options: NSDictionary = [key: passwd as AnyObject]
+					
+					var items: CFArray? = nil
+					
+					// 	- Import the PKCS12 file...
+					status = SecPKCS12Import(p12Data, options, &items)
+					if status != errSecSuccess {
+						
+						try self.throwLastError(source: "SecPKCS12Import", err: status)
+					}
+					
+					// 	- Now extract what we need...
+					let newArray = items! as [AnyObject] as NSArray
+					let dictionary = newArray.object(at: 0)
+					
+					//	-- Identity reference...
+					var secIdentityRef = (dictionary as AnyObject).value(forKey: kSecImportItemKeyID as String)
+					secIdentityRef = (dictionary as AnyObject).value(forKey: "identity")
+					guard let secIdentity = secIdentityRef else {
+						
+						let reason = "ERROR: Can't extract identity."
+						throw SSLError.fail(Int(ENOENT), reason)
+					}
+					
+					//	-- Cert chain...
+					var certs = [secIdentity]
+					var ccerts: Array<SecCertificate> = (dictionary as AnyObject).value(forKey: kSecImportItemCertChain as String) as! Array<SecCertificate>
+					for i in 1 ..< ccerts.count {
+						
+						certs += [ccerts[i] as AnyObject]
+					}
+					
+					// reuse pkcs12 certs in clones as SecPKCS12Import is very expensive
+					self.configuration.pkcs12Certs = certs as CFArray
 				}
 				
-				// 	- Now load them...
-				guard let p12Data = NSData(contentsOfFile: certFile) else {
-					
-					let reason = "ERROR: Error reading PKCS12 file"
-					throw SSLError.fail(Int(ENOENT), reason)
-				}
-				
-				// 	- Create key dictionary for reading p12 file...
-				guard let passwd: String = self.configuration.password else {
-					
-					let reason = "ERROR: No password for PKCS12 file"
-					throw SSLError.fail(Int(ENOENT), reason)
-				}
-				let key: NSString = kSecImportExportPassphrase as NSString
-				let options: NSDictionary = [key: passwd as AnyObject]
-				
-				var items: CFArray? = nil
-				
-				// 	- Import the PKCS12 file...
-				status = SecPKCS12Import(p12Data, options, &items)
-				if status != errSecSuccess {
-					
-					try self.throwLastError(source: "SecPKCS12Import", err: status)
-				}
-				
-				// 	- Now extract what we need...
-				let newArray = items! as [AnyObject] as NSArray
-				let dictionary = newArray.object(at: 0)
-				
-				//	-- Identity reference...
-				var secIdentityRef = (dictionary as AnyObject).value(forKey: kSecImportItemKeyID as String)
-				secIdentityRef = (dictionary as AnyObject).value(forKey: "identity")
-				guard let secIdentity = secIdentityRef else {
-					
-					let reason = "ERROR: Can't extract identity."
-					throw SSLError.fail(Int(ENOENT), reason)
-				}
-				
-				//	-- Cert chain...
-				var certs = [secIdentity]
-				var ccerts: Array<SecCertificate> = (dictionary as AnyObject).value(forKey: kSecImportItemCertChain as String) as! Array<SecCertificate>
-				for i in 1 ..< ccerts.count {
-					
-					certs += [ccerts[i] as AnyObject]
-				}
-				
-				status = SSLSetCertificate(sslContext, certs as CFArray)
+				status = SSLSetCertificate(sslContext, self.configuration.pkcs12Certs)
 				if status != errSecSuccess {
 					
 					try self.throwLastError(source: "SSLSetCertificate", err: status)
