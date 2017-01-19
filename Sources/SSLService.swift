@@ -827,6 +827,7 @@ public class SSLService: SSLServiceDelegate {
 			//	- Setup our read and write callbacks...
 			SSLSetIOFuncs(sslContext, sslReadCallback, sslWriteCallback)
 			
+			//  - Process the PKCS12 file (if any)...
 			var status: OSStatus
 			if configuration.noBackingCertificates == false {
 				
