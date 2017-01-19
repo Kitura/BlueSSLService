@@ -118,6 +118,7 @@ public class SSLService: SSLServiceDelegate {
 			// @FIXME: This isn't quite right, needs to be revisited.
 			public var cipherSuite: String = "14,13,2B,2F,2C,30,9E,9F,23,27,09,28,13,24,0A,14,67,33,6B,39,08,12,16,9C,9D,3C,3D,2F,35,0A"
 
+			/// Cached array of previously imported PKCS12.
 			fileprivate var pkcs12Certs: CFArray? = nil
 		#endif
 		
@@ -810,27 +811,10 @@ public class SSLService: SSLServiceDelegate {
 			
 		#else
 			
-			//	Note: We've already verified the configuration, so we've at least got the minimum requirements.
+			// Note: We've already verified the configuration, so we've at least got the minimum requirements.
+			//	Therefore, we don't need to check again...
 			
-			if configuration.noBackingCertificates == false {
-				
-				//	- Must have certificate chain path...
-				if let chainPath = configuration.certificateChainFilePath {
-					
-					guard NSData(contentsOfFile: chainPath) != nil else {
-						
-						let reason = "ERROR: Error reading PKCS12 file"
-						throw SSLError.fail(Int(ENOENT), reason)
-					}
-					
-				} else {
-					
-					let reason = "ERROR: Error reading PKCS12 file"
-					throw SSLError.fail(Int(ENOENT), reason)
-				}
-			}
-			
-			// Create the context...
+			// So, first create the context...
 			let protocolSide: SSLProtocolSide = self.isServer ? .serverSide : .clientSide
 			self.context = SSLCreateContext(kCFAllocatorDefault, protocolSide, SSLConnectionType.streamType)
 			guard let sslContext = self.context else {
@@ -846,7 +830,9 @@ public class SSLService: SSLServiceDelegate {
 			var status: OSStatus
 			if configuration.noBackingCertificates == false {
 				
+				// If we haven't processed the PKCS12 yet, process it now...
 				if self.configuration.pkcs12Certs == nil {
+					
 					//	- Ensure we've got the certificates...
 					guard let certFile = configuration.certificateChainFilePath else {
 						
