@@ -26,6 +26,10 @@ import Socket
 	import OpenSSL
 #endif
 
+#if !os(Linux)
+	import Dispatch
+#endif
+
 // MARK: SSLService
 
 ///
@@ -51,7 +55,7 @@ public class SSLService: SSLServiceDelegate {
 	static let PEM_END_MARKER: String					= "-----END CERTIFICATE-----"
 	
 	/// Default verfication depth
-	let DEFAULT_VERIFY_DEPTH: Int32						= 2
+	static let DEFAULT_VERIFY_DEPTH: Int32				= 2
 	
 	#if !os(Linux)
 	
@@ -78,6 +82,39 @@ public class SSLService: SSLServiceDelegate {
 		typealias OSStatus 								= Int32
 	#endif
 	
+	// MARK: Helper Structs
+	
+	#if !os(Linux)
+	
+		///
+		/// Used to dispatch reads and writes to protect the SSLContext
+		///
+		public struct SSLReadWriteDispatcher {
+		
+			/// Internal semaphore
+			let s = DispatchSemaphore(value: 1)
+		
+			///
+			/// Sync access to the embedded closure.
+			///
+			/// - Parameters:
+			///		- execute:		The block of `protected` code to be executed.
+			///
+			///	- Returns:			<R>
+			///
+			func sync<R>(execute: () throws -> R) rethrows -> R {
+			
+				_ = s.wait(timeout: DispatchTime.distantFuture)
+			
+				defer {
+					s.signal()
+				}
+				
+				return try execute()
+			}
+		}
+
+	#endif
 	
 	// MARK: Configuration
 	
@@ -285,6 +322,8 @@ public class SSLService: SSLServiceDelegate {
 		/// SSL Context
 		public private(set) var context: SSLContext?
 	
+		public private(set) var rwDispatch = SSLReadWriteDispatcher()
+	
 	#endif
 	
 	
@@ -478,7 +517,7 @@ public class SSLService: SSLServiceDelegate {
 	///
 	///	- Returns the number of bytes written. Zero indicates SSL shutdown, less than zero indicates error.
 	///
-	public func send(buffer: UnsafeRawPointer!, bufSize: Int) throws -> Int {
+	public func send(buffer: UnsafeRawPointer, bufSize: Int) throws -> Int {
 		
 		#if os(Linux)
 			
@@ -503,18 +542,23 @@ public class SSLService: SSLServiceDelegate {
 			
 		#else
 			
-			guard let sslContext = self.context else {
+			let processed = try self.rwDispatch.sync(execute: { [unowned self] () -> Int in
 				
-				let reason = "ERROR: SSL_write, code: \(ECONNABORTED), reason: Unable to reference connection)"
-				throw SSLError.fail(Int(ECONNABORTED), reason)
-			}
+				guard let sslContext = self.context else {
+					
+					let reason = "ERROR: SSL_write, code: \(ECONNABORTED), reason: Unable to reference connection)"
+					throw SSLError.fail(Int(ECONNABORTED), reason)
+				}
+				
+				var processed = 0
+				let status: OSStatus = SSLWrite(sslContext, buffer, bufSize, &processed)
+				if status != errSecSuccess && status != errSSLWouldBlock {
+					
+					try self.throwLastError(source: "SSLWrite", err: status)
+				}
+				return processed
+			})
 			
-			var processed = 0
-			let status: OSStatus = SSLWrite(sslContext, buffer, bufSize, &processed)
-			if status != errSecSuccess && status != errSSLWouldBlock {
-				
-				try self.throwLastError(source: "SSLWrite", err: status)
-			}
 			return processed
 			
 		#endif
@@ -554,20 +598,32 @@ public class SSLService: SSLServiceDelegate {
 			
 		#else
 			
-			guard let sslContext = self.context else {
+			let processed = try self.rwDispatch.sync(execute: { [unowned self] () -> Int in
 				
-				let reason = "ERROR: SSLRead, code: \(ECONNABORTED), reason: Unable to reference connection)"
-				throw SSLError.fail(Int(ECONNABORTED), reason)
-			}
-			
-			var processed = 0
-			let status: OSStatus = SSLRead(sslContext, buffer, bufSize, &processed)
-			if status != errSecSuccess && status != errSSLWouldBlock && status != errSSLClosedGraceful {
+				guard let sslContext = self.context else {
 				
-				try self.throwLastError(source: "SSLRead", err: status)
-			}
+					let reason = "ERROR: SSLRead, code: \(ECONNABORTED), reason: Unable to reference connection)"
+					throw SSLError.fail(Int(ECONNABORTED), reason)
+				}
 			
-			return status == errSSLClosedGraceful ? 0 : processed
+				var processed = 0
+				let status: OSStatus = SSLRead(sslContext, buffer, bufSize, &processed)
+				if status != errSecSuccess && status != errSSLWouldBlock && status != errSSLClosedGraceful {
+				
+					try self.throwLastError(source: "SSLRead", err: status)
+				}
+			
+				if status == errSSLWouldBlock {
+				
+					errno = EWOULDBLOCK
+					return Int(errSSLWouldBlock)
+				}
+			
+				return status == errSSLClosedGraceful ? 0 : processed
+			
+			})
+			
+			return processed
 			
 		#endif
 	}
@@ -728,7 +784,7 @@ public class SSLService: SSLServiceDelegate {
 			if self.configuration.certsAreSelfSigned {
 				SSL_CTX_set_verify(context, SSL_VERIFY_NONE, nil)
 			}
-			SSL_CTX_set_verify_depth(context, DEFAULT_VERIFY_DEPTH)
+			SSL_CTX_set_verify_depth(context, SSLService.DEFAULT_VERIFY_DEPTH)
 			
 			// Then handle the client/server specific stuff...
 			if !self.isServer {
