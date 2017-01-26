@@ -26,9 +26,7 @@ import Socket
 	import OpenSSL
 #endif
 
-#if !os(Linux)
-	import Dispatch
-#endif
+import Dispatch
 
 // MARK: SSLService
 
@@ -82,39 +80,35 @@ public class SSLService: SSLServiceDelegate {
 		typealias OSStatus 								= Int32
 	#endif
 	
-	// MARK: Helper Structs
+	// MARK: Helpers
 	
-	#if !os(Linux)
+	///
+	/// Used to dispatch reads and writes to protect the SSLContext
+	///
+	public struct SSLReadWriteDispatcher {
+		
+		/// Internal semaphore
+		let s = DispatchSemaphore(value: 1)
 	
 		///
-		/// Used to dispatch reads and writes to protect the SSLContext
+		/// Sync access to the embedded closure.
 		///
-		public struct SSLReadWriteDispatcher {
+		/// - Parameters:
+		///		- execute:		The block of `protected` code to be executed.
+		///
+		///	- Returns:			<R>
+		///
+		func sync<R>(execute: () throws -> R) rethrows -> R {
 		
-			/// Internal semaphore
-			let s = DispatchSemaphore(value: 1)
+			_ = s.wait(timeout: DispatchTime.distantFuture)
 		
-			///
-			/// Sync access to the embedded closure.
-			///
-			/// - Parameters:
-			///		- execute:		The block of `protected` code to be executed.
-			///
-			///	- Returns:			<R>
-			///
-			func sync<R>(execute: () throws -> R) rethrows -> R {
-			
-				_ = s.wait(timeout: DispatchTime.distantFuture)
-			
-				defer {
-					s.signal()
-				}
-				
-				return try execute()
+			defer {
+				s.signal()
 			}
+				
+			return try execute()
 		}
-
-	#endif
+	}
 	
 	// MARK: Configuration
 	
@@ -301,6 +295,9 @@ public class SSLService: SSLServiceDelegate {
 	
 	/// True if setup as server, false if setup as client.
 	public private(set) var isServer: Bool = true
+
+	/// Read/write dispatcher to serialize these operations...
+	public private(set) var rwDispatch = SSLReadWriteDispatcher()
 	
 	#if os(Linux)
 	
@@ -321,8 +318,6 @@ public class SSLService: SSLServiceDelegate {
 	
 		/// SSL Context
 		public private(set) var context: SSLContext?
-	
-		public private(set) var rwDispatch = SSLReadWriteDispatcher()
 	
 	#endif
 	
@@ -412,7 +407,14 @@ public class SSLService: SSLServiceDelegate {
 			
 			// Shutdown and then free SSL pointer...
 			if self.cSSL != nil {
-				SSL_shutdown(self.cSSL!)
+				
+				// This should avoid receiving the SIGPIPE when shutting down a session...
+				let rc = SSL_get_shutdown(self.cSSL!)
+				if rc >= 0 {
+					SSL_shutdown(self.cSSL!)
+				}
+				
+				// Finish cleaning up...
 				SSL_free(self.cSSL!)
 			}
 			
@@ -521,24 +523,29 @@ public class SSLService: SSLServiceDelegate {
 		
 		#if os(Linux)
 			
-			guard let sslConnect = self.cSSL else {
+			let processed = try self.rwDispatch.sync(execute: { [unowned self] () -> Int in
 				
-				let reason = "ERROR: SSL_write, code: \(ECONNABORTED), reason: Unable to reference connection)"
-				throw SSLError.fail(Int(ECONNABORTED), reason)
-			}
-			
-			let rc = SSL_write(sslConnect, buffer, Int32(bufSize))
-			if rc < 0 {
+				guard let sslConnect = self.cSSL else {
 				
-				if rc == SSL_ERROR_WANT_READ || rc == SSL_ERROR_WANT_WRITE {
-					
-					throw SSLError.retryNeeded
+					let reason = "ERROR: SSL_write, code: \(ECONNABORTED), reason: Unable to reference connection)"
+					throw SSLError.fail(Int(ECONNABORTED), reason)
 				}
+			
+				let rc = SSL_write(sslConnect, buffer, Int32(bufSize))
+				if rc < 0 {
 				
-				try self.throwLastError(source: "SSL_write")
-				return 0
-			}
-			return Int(rc)
+					if rc == SSL_ERROR_WANT_READ || rc == SSL_ERROR_WANT_WRITE {
+					
+						throw SSLError.retryNeeded
+					}
+				
+					try self.throwLastError(source: "SSL_write")
+					return 0
+				}
+				return Int(rc)
+			})
+			
+			return processed
 			
 		#else
 			
@@ -577,25 +584,30 @@ public class SSLService: SSLServiceDelegate {
 		
 		#if os(Linux)
 			
-			guard let sslConnect = self.cSSL else {
+			let processed = try self.rwDispatch.sync(execute: { [unowned self] () -> Int in
 				
-				let reason = "ERROR: SSL_read, code: \(ECONNABORTED), reason: Unable to reference connection)"
-				throw SSLError.fail(Int(ECONNABORTED), reason)
-			}
-			
-			let rc = SSL_read(sslConnect, buffer, Int32(bufSize))
-			if rc < 0 {
+				guard let sslConnect = self.cSSL else {
 				
-				if rc == SSL_ERROR_WANT_READ || rc == SSL_ERROR_WANT_WRITE {
-					
-					throw SSLError.retryNeeded
+					let reason = "ERROR: SSL_read, code: \(ECONNABORTED), reason: Unable to reference connection)"
+					throw SSLError.fail(Int(ECONNABORTED), reason)
 				}
-				
-				try self.throwLastError(source: "SSL_read")
-				return 0
-			}
-			return Int(rc)
 			
+				let rc = SSL_read(sslConnect, buffer, Int32(bufSize))
+				if rc < 0 {
+				
+					if rc == SSL_ERROR_WANT_READ || rc == SSL_ERROR_WANT_WRITE {
+					
+						throw SSLError.retryNeeded
+					}
+				
+					try self.throwLastError(source: "SSL_read")
+					return 0
+				}
+				return Int(rc)
+			})
+		
+			return processed
+	
 		#else
 			
 			let processed = try self.rwDispatch.sync(execute: { [unowned self] () -> Int in
