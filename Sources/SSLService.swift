@@ -24,6 +24,7 @@ import Socket
 
 #if os(Linux)
 	import OpenSSL
+	import Glibc
 #endif
 
 import Dispatch
@@ -381,6 +382,12 @@ public class SSLService: SSLServiceDelegate {
 				OPENSSL_add_all_algorithms_conf()
 				SSLService.initialized = true
 			}
+
+			// On Linux, it is not possible to set SO_NOSIGPIPE on the socket, nor
+			// is it possible to pass MSG_NOSIGNAL when writing via SSL_write().
+			// Instead, we will receive but ignore SIGPIPE in instances where a
+			// remote receiver closes their socket while we are trying to write.
+			signal(SIGPIPE, SIG_IGN)
 			
 			// Server or client specific method determination...
 			if isServer {
