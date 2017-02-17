@@ -19,7 +19,7 @@
 
 import PackageDescription
 
-#if os(Linux) || os(macOS)
+#if os(Linux) || os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
 
 	let package = Package(
 		name: "SSLService",

@@ -1,4 +1,5 @@
 ![macOS](https://img.shields.io/badge/os-macOS-green.svg?style=flat)
+![iOS](https://img.shields.io/badge/os-iOS-green.svg?style=flat)
 ![Linux](https://img.shields.io/badge/os-linux-green.svg?style=flat)
 ![Apache 2](https://img.shields.io/badge/license-Apache2-blue.svg?style=flat)
 ![](https://img.shields.io/badge/Swift-3.0-orange.svg?style=flat)
@@ -7,7 +8,7 @@
 # BlueSSLService
 
 ## Overview
-SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.git) in Swift using the Swift Package Manager. Works on macOS (using Secure Transport) and Linux (using OpenSSL).
+SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.git) in Swift using the Swift Package Manager. Works on supported Apple platforms (using Secure Transport) and on Linux (using OpenSSL).
 
 ## Contents
 
@@ -25,6 +26,11 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 * Xcode Version 8.2 (8C38) or higher using one of the above toolchains (*Recommended*)
 * Secure Transport is provided by macOS
 
+### iOS
+* iOS 10.0 or higher
+* Xcode Version 8.2 (8C38) or higher using one of the above toolchains (*Recommended*)
+* Secure Transport is provided by iOS.
+
 ### Linux
 
 * Ubuntu 16.04 (or 16.10 but only tested on 16.04)
@@ -33,7 +39,7 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 
 ### Package Dependencies
 
-* BlueSocket v0.12.19 or higher
+* BlueSocket v0.12.29 or higher
 * OpenSSL v0.3.1 or higher for Linux
 
 *Note:* See `Package.swift` for details.
@@ -172,7 +178,7 @@ try socket.connect(to: "someplace.org", port: 1337)
 ```
 public var verifyCallback: ((_ service: SSLService) -> (Bool, String?))? = nil
 ```
-Setting this callback is not required. It defaults to `nil` unless set.  The first parameter passed to your callback is the instance of `SSLService` that has this callback.  This will allow you to access the public members of the `SSLService` instance in order to do additional verification.  Upon completion, your callback should return a tuple.  The first value is a `Bool` indicating the sucess or failure of the routine.  The second value is an `optional String` value used to provide a description in the case where verification failed. In the event of callback failure, an `exception` will be thrown by the internal verification function.  **Important Note:** To effectively use this callback requires knowledge of the platforms underlying secure transport service, `Apple Secure Transport` on `macOS` and `OpenSSL` on `Linux`.
+Setting this callback is not required. It defaults to `nil` unless set.  The first parameter passed to your callback is the instance of `SSLService` that has this callback.  This will allow you to access the public members of the `SSLService` instance in order to do additional verification.  Upon completion, your callback should return a tuple.  The first value is a `Bool` indicating the sucess or failure of the routine.  The second value is an `optional String` value used to provide a description in the case where verification failed. In the event of callback failure, an `exception` will be thrown by the internal verification function.  **Important Note:** To effectively use this callback requires knowledge of the platforms underlying secure transport service, `Apple Secure Transport` on `supported Apple platforms` and `OpenSSL` on `Linux`.
 
 ### Skipping Connection Verification
 
