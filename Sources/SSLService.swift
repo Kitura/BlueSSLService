@@ -148,6 +148,9 @@ public class SSLService: SSLServiceDelegate {
 			/// Cipher suites to use. Defaults to `14,13,2B,2F,2C,30,9E,9F,23,27,09,28,13,24,0A,14,67,33,6B,39,08,12,16,9C,9D,3C,3D,2F,35,0A`
 			// @FIXME: This isn't quite right, needs to be revisited.
 			public var cipherSuite: String = "14,13,2B,2F,2C,30,9E,9F,23,27,09,28,13,24,0A,14,67,33,6B,39,08,12,16,9C,9D,3C,3D,2F,35,0A"
+		
+			/// `True` to use default cipher list, false otherwise.
+			public var useDefaultCiphers: Bool = true
 
 			/// Cached array of previously imported PKCS12.
 			fileprivate var pkcs12Certs: CFArray? = nil
@@ -965,6 +968,11 @@ public class SSLService: SSLServiceDelegate {
 					try self.throwLastError(source: "SSLSetCertificate", err: status)
 				}
 				
+			}
+			
+			// If we're using default ciphers, skip the process below...
+			if configuration.useDefaultCiphers {
+				return
 			}
 			
 			//	- Setup the cipher list...
