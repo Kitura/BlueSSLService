@@ -53,6 +53,13 @@ To build `SSLService` from the command line:
 % swift build
 ```
 
+To enable automatic ECDH handling with *OpenSSL 1.0.2 or higher*:
+
+```
+% cd <path-to-clone>
+% swift build -Xswiftc -DUSE_AUTO_ECDH
+```
+
 ## Using BlueSSLService
 
 ### Before starting
