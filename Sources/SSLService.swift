@@ -806,8 +806,10 @@ public class SSLService: SSLServiceDelegate {
 			}
 			SSL_CTX_set_verify_depth(context, SSLService.DEFAULT_VERIFY_DEPTH)
 			
+			#if OPENSSL_TOO_OLD
+
+			#else
 			//	- Auto ECDH handling...  Note: requires OpenSSL 1.0.2 or greater.
-			#if SSL_CTRL_SET_ECDH_AUTO
 				let minVersion = "1.0.2"
 				let version = OPENSSL_VERSION_TEXT
 				if version.compare(minVersion, options: .numeric) == .orderedSame ||
