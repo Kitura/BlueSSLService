@@ -808,12 +808,7 @@ public class SSLService: SSLServiceDelegate {
 			
 			#if USE_AUTO_ECDH
 			//	- Auto ECDH handling...  Note: requires OpenSSL 1.0.2 or greater.
-				let minVersion = "1.0.2"
-				let version = OPENSSL_VERSION_TEXT
-				if version.compare(minVersion, options: .numeric) == .orderedSame ||
-				   version.compare(minVersion, options: .numeric) == .orderedDescending {
-    				SSL_CTX_ctrl(context, SSL_CTRL_SET_ECDH_AUTO, 1, nil)
-				}
+			SSL_CTX_ctrl(context, SSL_CTRL_SET_ECDH_AUTO, 1, nil)
 			#endif
 			
 			// Then handle the client/server specific stuff...
