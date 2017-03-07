@@ -796,20 +796,25 @@ public class SSLService: SSLServiceDelegate {
 			// Handle the stuff common to both client and server...
 			//	- Auto retry...
 			SSL_CTX_ctrl(context, SSL_CTRL_MODE, SSL_MODE_AUTO_RETRY, nil)
+
 			//	- User selected cipher list...
 			SSL_CTX_set_cipher_list(context, self.configuration.cipherSuite)
+
 			//	- Verification behavior...
 			if self.configuration.certsAreSelfSigned {
 				SSL_CTX_set_verify(context, SSL_VERIFY_NONE, nil)
 			}
 			SSL_CTX_set_verify_depth(context, SSLService.DEFAULT_VERIFY_DEPTH)
+			
 			//	- Auto ECDH handling...  Note: requires OpenSSL 1.0.2 or greater.
-			let minVersion = "1.0.2"
-			let version = OPENSSL_VERSION_TEXT
-			if version.compare(minVersion, options: .numeric) == .orderedSame ||
-			   version.compare(minVersion, options: .numeric) == .orderedDescending {
-    			SSL_CTX_ctrl(context, SSL_CTRL_SET_ECDH_AUTO, 1, nil)
-			}
+			#if SSL_CTRL_SET_ECDH_AUTO
+				let minVersion = "1.0.2"
+				let version = OPENSSL_VERSION_TEXT
+				if version.compare(minVersion, options: .numeric) == .orderedSame ||
+				   version.compare(minVersion, options: .numeric) == .orderedDescending {
+    				SSL_CTX_ctrl(context, SSL_CTRL_SET_ECDH_AUTO, 1, nil)
+				}
+			#endif
 			
 			// Then handle the client/server specific stuff...
 			if !self.isServer {
