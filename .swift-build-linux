@@ -1,0 +1,1 @@
+swift build -Xswiftc -DOPENSSL_TOO_OLD
