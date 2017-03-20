@@ -562,8 +562,9 @@ public class SSLService: SSLServiceDelegate {
 				
 				var processed = 0
 				let status: OSStatus = SSLWrite(sslContext, buffer, bufSize, &processed)
-				if status != errSecSuccess && status != errSSLWouldBlock {
-					
+				if status == errSSLWouldBlock {
+					throw SSLError.retryNeeded
+				} else if status != errSecSuccess {
 					try self.throwLastError(source: "SSLWrite", err: status)
 				}
 				return processed
