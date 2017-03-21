@@ -537,7 +537,8 @@ public class SSLService: SSLServiceDelegate {
 				let rc = SSL_write(sslConnect, buffer, Int32(bufSize))
 				if rc < 0 {
 				
-					if rc == SSL_ERROR_WANT_READ || rc == SSL_ERROR_WANT_WRITE {
+					let error = SSL_get_error(sslConnect, rc)
+					if error == SSL_ERROR_WANT_READ || error == SSL_ERROR_WANT_WRITE {
 					
 						throw SSLError.retryNeeded
 					}
