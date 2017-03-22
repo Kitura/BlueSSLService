@@ -469,7 +469,7 @@ public class SSLService: SSLServiceDelegate {
 				let rc = SSL_accept(sslConnect)
 				if rc <= 0 {
 					
-					try self.throwLastError(source: "SSL_accept")
+					try self.throwLastError(source: "SSL_accept", err: SSL_get_error(sslConnect, rc))
 				}
 				
 			#else
@@ -499,7 +499,7 @@ public class SSLService: SSLServiceDelegate {
 			let rc = SSL_connect(sslConnect)
 			if rc <= 0 {
 				
-				try self.throwLastError(source: "SSL_connect")
+				try self.throwLastError(source: "SSL_connect", err: SSL_get_error(sslConnect, rc))
 			}
 			
 		#else
@@ -543,7 +543,7 @@ public class SSLService: SSLServiceDelegate {
 						throw SSLError.retryNeeded
 					}
 				
-					try self.throwLastError(source: "SSL_write")
+					try self.throwLastError(source: "SSL_write", err: lastError)
 					return 0
 				}
 				return Int(rc)
@@ -610,7 +610,7 @@ public class SSLService: SSLServiceDelegate {
 						return 0
 					}
 				
-					try self.throwLastError(source: "SSL_read")
+					try self.throwLastError(source: "SSL_read", err: lastError)
 					return 0
 				}
 				return Int(rc)
@@ -1172,19 +1172,22 @@ public class SSLService: SSLServiceDelegate {
 	///
 	private func throwLastError(source: String, err: OSStatus = 0) throws {
 		
+		var errorCode = err
 		var errorString: String
 		
 		#if os(Linux)
 			
-			let err = ERR_get_error()
+			if errorCode == 0 {
+				errorCode = Int32(ERR_get_error())
+			}
 			
 			// Don't throw an error if the err code comes back as a zero...
 			//	- This indicates no error found, so just return...
-			if err == 0 {
+			if errorCode == 0 {
 				return
 			}
 			
-			if let errorStr = ERR_reason_error_string(err) {
+			if let errorStr = ERR_reason_error_string(UInt(errorCode)) {
 				errorString = String(validatingUTF8: errorStr)!
 			} else {
 				errorString = "Could not determine error reason."
@@ -1193,11 +1196,11 @@ public class SSLService: SSLServiceDelegate {
 		#else
 			
 			// If no error, just return...
-			if err == errSecSuccess {
+			if errorCode == errSecSuccess {
 				return
 			}
 			
-			if let val = SecureTransportErrors[err] {
+			if let val = SecureTransportErrors[errorCode] {
 				errorString = val
 			} else {
 				errorString = "Could not determine error reason."
@@ -1205,8 +1208,8 @@ public class SSLService: SSLServiceDelegate {
 			
 		#endif
 		
-		let reason = "ERROR: \(source), code: \(err), reason: \(errorString)"
-		throw SSLError.fail(Int(err), reason)
+		let reason = "ERROR: \(source), code: \(errorCode), reason: \(errorString)"
+		throw SSLError.fail(Int(errorCode), reason)
 	}
 }
 
