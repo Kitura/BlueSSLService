@@ -537,8 +537,9 @@ public class SSLService: SSLServiceDelegate {
 				let rc = SSL_write(sslConnect, buffer, Int32(bufSize))
 				if rc < 0 {
 				
-					if rc == SSL_ERROR_WANT_READ || rc == SSL_ERROR_WANT_WRITE {
-					
+					let lastError = SSL_get_error(sslConnect, rc)
+					if lastError == SSL_ERROR_WANT_READ || lastError == SSL_ERROR_WANT_WRITE {
+						
 						throw SSLError.retryNeeded
 					}
 				
@@ -563,8 +564,11 @@ public class SSLService: SSLServiceDelegate {
 				var processed = 0
 				let status: OSStatus = SSLWrite(sslContext, buffer, bufSize, &processed)
 				if status == errSSLWouldBlock {
+					
 					throw SSLError.retryNeeded
+					
 				} else if status != errSecSuccess {
+					
 					try self.throwLastError(source: "SSLWrite", err: status)
 				}
 				return processed
@@ -599,9 +603,11 @@ public class SSLService: SSLServiceDelegate {
 				let rc = SSL_read(sslConnect, buffer, Int32(bufSize))
 				if rc < 0 {
 				
-					if rc == SSL_ERROR_WANT_READ || rc == SSL_ERROR_WANT_WRITE {
-					
-						throw SSLError.retryNeeded
+					let lastError = SSL_get_error(sslConnect, rc)
+					if lastError == SSL_ERROR_WANT_READ || lastError == SSL_ERROR_WANT_WRITE {
+
+						errno = EAGAIN
+						return 0
 					}
 				
 					try self.throwLastError(source: "SSL_read")
