@@ -607,7 +607,7 @@ public class SSLService: SSLServiceDelegate {
 					if lastError == SSL_ERROR_WANT_READ || lastError == SSL_ERROR_WANT_WRITE {
 
 						errno = EAGAIN
-						return 0
+						return -1
 					}
 				
 					try self.throwLastError(source: "SSL_read", err: lastError)
@@ -638,7 +638,7 @@ public class SSLService: SSLServiceDelegate {
 				if status == errSSLWouldBlock {
 				
 					errno = EWOULDBLOCK
-					return Int(errSSLWouldBlock)
+					return -1
 				}
 			
 				return status == errSSLClosedGraceful ? 0 : processed
