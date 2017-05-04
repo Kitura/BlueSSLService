@@ -18,17 +18,17 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 
 ### Swift
 * Swift Open Source `swift-3.0.1-RELEASE` toolchain (**Minimum REQUIRED for latest release**)
-* Swift Open Source `swift-3.1-RELEASE` toolchain (**Recommended**)
+* Swift Open Source `swift-3.1.1-RELEASE` toolchain (**Recommended**)
 
 ### macOS
 
 * macOS 10.11.6 (*El Capitan*) or higher
-* Xcode Version 8.3.1 (8E1000a) or higher using one of the above toolchains (*Recommended*)
+* Xcode Version 8.3.2 (8E2002) or higher using one of the above toolchains (*Recommended*)
 * Secure Transport is provided by macOS
 
 ### iOS
 * iOS 10.0 or higher
-* Xcode Version 8.3.1 (8E1000a) or higher using one of the above toolchains (*Recommended*)
+* Xcode Version 8.3.2 (8E2002) or higher using one of the above toolchains (*Recommended*)
 * Secure Transport is provided by iOS.
 
 ### Linux
