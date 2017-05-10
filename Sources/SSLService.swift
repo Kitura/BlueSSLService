@@ -28,10 +28,6 @@ import Socket
 
 import Dispatch
 
-/// Returned instead of errSecSuccess when client accepts self-signed certificates and authentication completed successfully
-let errSSLServerAuthCompleted: OSStatus = -9841
-
-
 // MARK: SSLService
 
 ///
@@ -74,7 +70,7 @@ public class SSLService: SSLServiceDelegate {
 			errSecAuthFailed    	 : "errSecAuthFailed",
 			errSSLClosedGraceful	 : "errSSLClosedGraceful",
 			errSSLXCertChainInvalid	 : "errSSLXCertChainInvalid",
-			errSSLServerAuthCompleted: "errSSLServerAuthCompleted"
+			errSSLPeerAuthCompleted: "errSSLPeerAuthCompleted"
 		]
 	
 	#endif
@@ -1092,7 +1088,7 @@ public class SSLService: SSLServiceDelegate {
 			
 		} while status == errSSLWouldBlock
 		
-		if status != errSecSuccess && status != errSSLServerAuthCompleted {
+		if status != errSecSuccess && status != errSSLPeerAuthCompleted {
 			
 			try self.throwLastError(source: "SSLHandshake", err: status)
 		}
