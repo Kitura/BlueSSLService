@@ -59,17 +59,18 @@ public class SSLService: SSLServiceDelegate {
 	
 		/// String representation of Secure Transport Errors
 		let SecureTransportErrors: [OSStatus: String] 	= [
-			errSecSuccess       	: "errSecSuccess",
-			errSSLNegotiation   	: "errSSLNegotiation",
-			errSecParam         	: "errSecParam",
-			errSSLClosedAbort   	: "errSSLClosedAbort",
-			errSecIO            	: "errSecIO",
-			errSSLWouldBlock    	: "errSSLWouldBlock",
-			errSSLPeerUnknownCA 	: "errSSLPeerUnknownCA",
-			errSSLBadRecordMac  	: "errSSLBadRecordMac",
-			errSecAuthFailed    	: "errSecAuthFailed",
-			errSSLClosedGraceful	: "errSSLClosedGraceful",
-			errSSLXCertChainInvalid	: "errSSLXCertChainInvalid"
+			errSecSuccess       	 : "errSecSuccess",
+			errSSLNegotiation   	 : "errSSLNegotiation",
+			errSecParam         	 : "errSecParam",
+			errSSLClosedAbort   	 : "errSSLClosedAbort",
+			errSecIO            	 : "errSecIO",
+			errSSLWouldBlock    	 : "errSSLWouldBlock",
+			errSSLPeerUnknownCA 	 : "errSSLPeerUnknownCA",
+			errSSLBadRecordMac  	 : "errSSLBadRecordMac",
+			errSecAuthFailed    	 : "errSecAuthFailed",
+			errSSLClosedGraceful	 : "errSSLClosedGraceful",
+			errSSLXCertChainInvalid	 : "errSSLXCertChainInvalid",
+			errSSLPeerAuthCompleted: "errSSLPeerAuthCompleted"
 		]
 	
 	#endif
@@ -138,8 +139,11 @@ public class SSLService: SSLServiceDelegate {
 		/// Path to PEM formatted certificate string.
 		public private(set) var certificateString: String? = nil
 		
-		/// True if using `self-signed` certificates.
+		/// True if server is using `self-signed` certificates.
 		public private(set) var certsAreSelfSigned = false
+        
+        /// True if isServer == false and the client accepts self-signed certificates. Defaults to false, be careful to not leave as true in production
+        public private(set) var clientAllowsSelfSignedCertificates = false
 		
 		#if os(Linux)
 			/// Cipher suites to use. Defaults to `DEFAULT`
@@ -218,18 +222,20 @@ public class SSLService: SSLServiceDelegate {
 		/// *Note:* If using a certificate chain file, the certificates must be in PEM format and must be sorted starting with the subject's certificate (actual client or server certificate), followed by intermediate CA certificates if applicable, and ending at the highest level (root) CA.
 		///
 		/// - Parameters:
-		///		- chainFilePath:			Path to the certificate chain file (optional). *(see note above)*
-		///		- password:					Password for the chain file (optional).
-		///		- selfSigned:				True if certs are `self-signed`, false otherwise. Defaults to true.
-		///		- cipherSuite:				Optional String containing the cipher suite to use.
+		///		- chainFilePath:                        Path to the certificate chain file (optional). *(see note above)*
+		///		- password:                             Password for the chain file (optional).
+		///		- selfSigned:                           True if certs are `self-signed`, false otherwise. Defaults to true.
+        ///     - clientAllowsSelfSignedCertificates:   True if, as a client, connections to self-signed servers are allowed
+		///		- cipherSuite:                          Optional String containing the cipher suite to use.
 		///
 		///	- Returns:	New Configuration instance.
 		///
-		public init(withChainFilePath chainFilePath: String? = nil, withPassword password: String? = nil, usingSelfSignedCerts selfSigned: Bool = true, cipherSuite: String? = nil) {
+        public init(withChainFilePath chainFilePath: String? = nil, withPassword password: String? = nil, usingSelfSignedCerts selfSigned: Bool = true, clientAllowsSelfSignedCertificates: Bool = false, cipherSuite: String? = nil) {
 			
 			self.certificateChainFilePath = chainFilePath
 			self.password = password
 			self.certsAreSelfSigned = selfSigned
+            self.clientAllowsSelfSignedCertificates = clientAllowsSelfSignedCertificates
 			if cipherSuite != nil {
 				self.cipherSuite = cipherSuite!
 			}
@@ -676,7 +682,7 @@ public class SSLService: SSLServiceDelegate {
 			}
 			return
 		}
-		
+        
 		#if os(Linux)
 			
 			// If we're using self-signed certs, we only require a certificate and key...
@@ -1068,6 +1074,12 @@ public class SSLService: SSLServiceDelegate {
 			
 			try self.throwLastError(source: "SSLSetConnection", err: status)
 		}
+        
+        // Allow self signed certificates from server
+        if isServer == false && configuration.clientAllowsSelfSignedCertificates == true {
+            SSLSetSessionOption(sslContext, .breakOnServerAuth, true)
+        }
+
 		
 		// Start and repeat the handshake process until it either completes or fails...
 		repeat {
@@ -1076,7 +1088,7 @@ public class SSLService: SSLServiceDelegate {
 			
 		} while status == errSSLWouldBlock
 		
-		if status != errSecSuccess {
+		if status != errSecSuccess && status != errSSLPeerAuthCompleted {
 			
 			try self.throwLastError(source: "SSLHandshake", err: status)
 		}
