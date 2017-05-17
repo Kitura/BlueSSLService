@@ -266,13 +266,15 @@ public class SSLService: SSLServiceDelegate {
 		/// Initialize a configuration with no backing certificates.
 		///
 		/// - Parameters:
-		///		- cipherSuite:				Optional String containing the cipher suite to use.
+        	///    		- clientAllowsSelfSignedCertificates:   True if, as a client, connections to self-signed servers are allowed
+		///		- cipherSuite:                          Optional String containing the cipher suite to use.
 		///
 		///	- Returns:	New Configuration instance.
 		///
-		public init(withCipherSuite cipherSuite: String?) {
+		public init(clientAllowsSelfSignedCertificates: Bool = false, withCipherSuite cipherSuite: String?) {
 			
 			self.noBackingCertificates = true
+			self.clientAllowsSelfSignedCertificates = clientAllowsSelfSignedCertificates
 			if cipherSuite != nil {
 				self.cipherSuite = cipherSuite!
 			}
