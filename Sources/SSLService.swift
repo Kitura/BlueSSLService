@@ -273,6 +273,7 @@ public class SSLService: SSLServiceDelegate {
 		public init(withCipherSuite cipherSuite: String?) {
 			
 			self.noBackingCertificates = true
+			self.clientAllowsSelfSignedCertificates = true
 			if cipherSuite != nil {
 				self.cipherSuite = cipherSuite!
 			}
