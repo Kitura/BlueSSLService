@@ -502,8 +502,12 @@ public class SSLService: SSLServiceDelegate {
 			
 			try self.verifyConnection()
 			
-			// Seek for ALPN protocol and select the first supported one
-			negotiateAlpnProtocols()
+			#if os(Linux)
+			
+				// Seek for ALPN protocol and select the first supported one
+				negotiateAlpnProtocols()
+			
+			#endif
 		}
 	}
 	
@@ -1128,6 +1132,30 @@ public class SSLService: SSLServiceDelegate {
 		return sslConnect
 	}
 	
+	///
+	/// The function will use the OpenSSL API to negotiate an ALPN protocol with the client.
+	/// This is usually being done in response the a ClientHello message that contains the ALPN extension information.
+	/// If an ALPN protocol has been chose, it will be set in the 'negotiatedAlpnProtocol' field.
+	///
+	private func negotiateAlpnProtocols() {
+	var alpn: UnsafePointer<UInt8>? = nil
+	var alpnlen: UInt32 = 0
+	
+	SSL_get0_next_proto_negotiated(self.cSSL, &alpn, &alpnlen)
+	if (OPENSSL_VERSION_NUMBER >= 0x10002000 && alpn == nil) {
+	//SSL_get0_alpn_selected is only available from v1.0.2
+	SSL_get0_alpn_selected(self.cSSL, &alpn, &alpnlen)
+	}
+	
+	if alpn != nil && alpnlen > 0 {
+	let data = Data(bytes: alpn!, count: Int(alpnlen))
+	let alpnStr = String(data: data, encoding: .ascii)
+	negotiatedAlpnProtocol = alpnStr
+	} else {
+	negotiatedAlpnProtocol = nil
+	}
+	}
+	
 #else
 	
 	///
@@ -1248,30 +1276,6 @@ public class SSLService: SSLServiceDelegate {
 			
 			let reason = failReason ?? "Unknown verification failure"
 			throw SSLError.fail(Int(EFAULT), "ERROR: " + reason)
-		}
-	}
-	
-	///
-	/// The function will use the OpenSSL API to negotiate an ALPN protocol with the client.
-	/// This is usually being done in response the a ClientHello message that contains the ALPN extension information.
-	/// If an ALPN protocol has been chose, it will be set in the 'negotiatedAlpnProtocol' field.
-	///
-	private func negotiateAlpnProtocols() {
-		var alpn: UnsafePointer<UInt8>? = nil
-		var alpnlen: UInt32 = 0
-		
-		SSL_get0_next_proto_negotiated(self.cSSL, &alpn, &alpnlen)
-		if (OPENSSL_VERSION_NUMBER >= 0x10002000 && alpn == nil) {
-			//SSL_get0_alpn_selected is only available from v1.0.2
-			SSL_get0_alpn_selected(self.cSSL, &alpn, &alpnlen)
-		}
-		
-		if alpn != nil && alpnlen > 0 {
-			let data = Data(bytes: alpn!, count: Int(alpnlen))
-			let alpnStr = String(data: data, encoding: .ascii)
-			negotiatedAlpnProtocol = alpnStr
-		} else {
-			negotiatedAlpnProtocol = nil
 		}
 	}
 	
