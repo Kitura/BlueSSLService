@@ -27,6 +27,7 @@
 /* Begin PBXFileReference section */
 		8C4223041CF7444C0047BDC3 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		8C4223051CF7444C0047BDC3 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		8C9896431ED8A3E800AA1670 /* BlueSSLService.podspec */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = BlueSSLService.podspec; sourceTree = "<group>"; };
 		__PBXFileRef_Package.swift /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		"__PBXFileRef_Packages/Socket-0.5.11/Sources/Socket.swift" /* Socket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Socket.swift; path = ../BlueSocket/Sources/Socket.swift; sourceTree = SOURCE_ROOT; };
 		"__PBXFileRef_Packages/Socket-0.5.11/Sources/SocketProtocols.swift" /* SocketProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SocketProtocols.swift; path = ../BlueSocket/Sources/SocketProtocols.swift; sourceTree = SOURCE_ROOT; };
@@ -67,6 +68,7 @@
 		"___RootGroup_" = {
 			isa = PBXGroup;
 			children = (
+				8C9896431ED8A3E800AA1670 /* BlueSSLService.podspec */,
 				8C4223041CF7444C0047BDC3 /* LICENSE */,
 				__PBXFileRef_Package.swift /* Package.swift */,
 				8C4223051CF7444C0047BDC3 /* README.md */,
