@@ -980,7 +980,8 @@ public class SSLService: SSLServiceDelegate {
 				// None of the provided protocol is supported. Return NOACK.
 				return SSL_TLSEXT_ERR_NOACK
 			}
-			if OPENSSL_VERSION_NUMBER >= 0x10002000 { //SSL_CTX_set_alpn_select_cb is only available from v1.0.2
+			
+			if (SSLeay() >= 0x10002000) { //SSL_CTX_set_alpn_select_cb() is only available from v1.0.2
 				SSL_CTX_set_alpn_select_cb(context, alpnSelectProtocolCallback, nil)
 			}
 		
@@ -1142,18 +1143,17 @@ public class SSLService: SSLServiceDelegate {
 	var alpnlen: UInt32 = 0
 	
 	SSL_get0_next_proto_negotiated(self.cSSL, &alpn, &alpnlen)
-	if (OPENSSL_VERSION_NUMBER >= 0x10002000 && alpn == nil) {
-	//SSL_get0_alpn_selected is only available from v1.0.2
-	SSL_get0_alpn_selected(self.cSSL, &alpn, &alpnlen)
+	if (SSLeay() >= 0x10002000 && alpn == nil) { //SSL_get0_alpn_selected is only available from v1.0.2
+		SSL_get0_alpn_selected(self.cSSL, &alpn, &alpnlen)
 	}
 	
 	if alpn != nil && alpnlen > 0 {
-	let data = Data(bytes: alpn!, count: Int(alpnlen))
-	let alpnStr = String(data: data, encoding: .ascii)
-	negotiatedAlpnProtocol = alpnStr
-	} else {
-	negotiatedAlpnProtocol = nil
-	}
+		let data = Data(bytes: alpn!, count: Int(alpnlen))
+		let alpnStr = String(data: data, encoding: .ascii)
+			negotiatedAlpnProtocol = alpnStr
+		} else {
+			negotiatedAlpnProtocol = nil
+		}
 	}
 	
 #else
