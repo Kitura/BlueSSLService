@@ -927,8 +927,7 @@ public class SSLService: SSLServiceDelegate {
 			
 			// - Finally, setup ALPN/NPN callback functions
 			// -- NPN advertised protocols to be sent in ServerHello if requested
-			let nextProtosCallback: @convention(c) (UnsafeMutablePointer<SSL>?, UnsafeMutablePointer<UnsafePointer<UInt8>?>?, UnsafeMutablePointer<UInt32>?, UnsafeMutableRawPointer?) -> Int32 = { ( ssl, data, len, arg ) in
-				
+			SSL_CTX_set_next_protos_advertised_cb(context, { ( ssl, data, len, arg ) in
 				//E.g. data: [ 0x02, 0x68, 0x32 ] //2, 'h', '2'
 				var availBytes = [UInt8]()
 				let available = SSLService.availableAlpnProtocols
@@ -941,12 +940,10 @@ public class SSLService: SSLServiceDelegate {
 				len?.pointee = UInt32(availBytes.count)
 				
 				return SSL_TLSEXT_ERR_OK
-			}
-			SSL_CTX_set_next_protos_advertised_cb(context, nextProtosCallback, nil)
+			}, nil)
 			
 			// -- Callback for selecting an ALPN protocol based on supported protocols
-			let alpnSelectProtocolCallback: @convention(c) (UnsafeMutablePointer<SSL>?, UnsafeMutablePointer<UnsafePointer<UInt8>?>?, UnsafeMutablePointer<UInt8>?, UnsafePointer<UInt8>?, UInt32, UnsafeMutableRawPointer?) -> Int32 = { (ssl, out, outlen, _in, _inlen, arg) in
-				
+			SSL_CTX_set_alpn_select_cb_wrapper(context, { (ssl, out, outlen, _in, _inlen, arg) in
 				//_in is a buffer of bytes sent by the client within the ClientHello. The structure
 				//is a byte of length followed by ascii bytes for the name of the protocol.
 				//E.g. "\u{02}h2\u{08}http/1.1"
@@ -979,8 +976,7 @@ public class SSLService: SSLServiceDelegate {
 				
 				// None of the provided protocol is supported. Return NOACK.
 				return SSL_TLSEXT_ERR_NOACK
-			}
-			SSL_CTX_set_alpn_select_cb_wrapper(context, alpnSelectProtocolCallback, nil)
+			}, nil)
 		
 			
 		#else
