@@ -980,10 +980,7 @@ public class SSLService: SSLServiceDelegate {
 				// None of the provided protocol is supported. Return NOACK.
 				return SSL_TLSEXT_ERR_NOACK
 			}
-			
-			if (SSLeay() >= 0x10002000) { //SSL_CTX_set_alpn_select_cb() is only available from v1.0.2
-				SSL_CTX_set_alpn_select_cb(context, alpnSelectProtocolCallback, nil)
-			}
+			SSL_CTX_set_alpn_select_cb_wrapper(context, alpnSelectProtocolCallback, nil)
 		
 			
 		#else
@@ -1143,8 +1140,8 @@ public class SSLService: SSLServiceDelegate {
 	var alpnlen: UInt32 = 0
 	
 	SSL_get0_next_proto_negotiated(self.cSSL, &alpn, &alpnlen)
-	if (SSLeay() >= 0x10002000 && alpn == nil) { //SSL_get0_alpn_selected is only available from v1.0.2
-		SSL_get0_alpn_selected(self.cSSL, &alpn, &alpnlen)
+	if (alpn == nil) {
+		SSL_get0_alpn_selected_wrapper(self.cSSL, &alpn, &alpnlen)
 	}
 	
 	if alpn != nil && alpnlen > 0 {
