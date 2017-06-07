@@ -169,6 +169,26 @@ public class SSLService: SSLServiceDelegate {
 		// MARK: Lifecycle
 		
 		///
+		/// Initialize a configuration with no backing certificates.
+		///
+		/// - Parameters:
+		///		- cipherSuite:					Optional String containing the cipher suite to use.
+		///		- clientAllowsSelfSignedCertificates:
+		///										`true` to accept self-signed certificates from a server. `false` otherwise.
+		///										**Note:** This parameter is only used when `SSLService` is used with a client socket.
+		///
+		///	- Returns:	New Configuration instance.
+		///
+		public init(withCipherSuite cipherSuite: String? = nil, clientAllowsSelfSignedCertificates: Bool = true) {
+			
+			self.noBackingCertificates = true
+			self.clientAllowsSelfSignedCertificates = clientAllowsSelfSignedCertificates
+			if cipherSuite != nil {
+				self.cipherSuite = cipherSuite!
+			}
+		}
+		
+		///
 		/// Initialize a configuration using a `CA Certificate` file.
 		///
 		/// - Parameters:
@@ -230,7 +250,7 @@ public class SSLService: SSLServiceDelegate {
 		///
 		///	- Returns:	New Configuration instance.
 		///
-        public init(withChainFilePath chainFilePath: String? = nil, withPassword password: String? = nil, usingSelfSignedCerts selfSigned: Bool = true, clientAllowsSelfSignedCertificates: Bool = false, cipherSuite: String? = nil) {
+        public init(withChainFilePath chainFilePath: String?, withPassword password: String? = nil, usingSelfSignedCerts selfSigned: Bool = true, clientAllowsSelfSignedCertificates: Bool = false, cipherSuite: String? = nil) {
 			
 			self.certificateChainFilePath = chainFilePath
 			self.password = password
@@ -261,25 +281,8 @@ public class SSLService: SSLServiceDelegate {
 			}
 		}
 		#endif
-		
-		///
-		/// Initialize a configuration with no backing certificates.
-		///
-		/// - Parameters:
-		///		- cipherSuite:				Optional String containing the cipher suite to use.
-		///
-		///	- Returns:	New Configuration instance.
-		///
-		public init(withCipherSuite cipherSuite: String?) {
-			
-			self.noBackingCertificates = true
-			self.clientAllowsSelfSignedCertificates = true
-			if cipherSuite != nil {
-				self.cipherSuite = cipherSuite!
-			}
-		}
 	}
-	
+		
 	// MARK: Properties
 	
 	// MARK: -- Public
