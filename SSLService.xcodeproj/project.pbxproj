@@ -7,9 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		8C5E99271CF7D63C008D4940 /* Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = "__PBXFileRef_Packages/Socket-0.5.11/Sources/Socket.swift" /* Socket.swift */; };
-		8C5E99281CF7D63C008D4940 /* SocketProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = "__PBXFileRef_Packages/Socket-0.5.11/Sources/SocketProtocols.swift" /* SocketProtocols.swift */; };
-		8C5E99291CF7D63C008D4940 /* SocketUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = "__PBXFileRef_Packages/Socket-0.5.11/Sources/SocketUtils.swift" /* SocketUtils.swift */; };
+		8C0ABD521EE89FD000B098F1 /* SocketProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0ABD4F1EE89FCF00B098F1 /* SocketProtocols.swift */; };
+		8C0ABD531EE89FD000B098F1 /* Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0ABD501EE89FCF00B098F1 /* Socket.swift */; };
+		8C0ABD541EE89FD000B098F1 /* SocketUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0ABD511EE89FCF00B098F1 /* SocketUtils.swift */; };
 		_LinkFileRef_Socket_via_SSLService /* libSocket.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = "_____Product_Socket" /* libSocket.dylib */; };
 		__src_cc_ref_Sources/SSLService.swift /* SSLService.swift in Sources */ = {isa = PBXBuildFile; fileRef = __PBXFileRef_Sources/SSLService.swift /* SSLService.swift */; };
 /* End PBXBuildFile section */
@@ -25,13 +25,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		8C0ABD4F1EE89FCF00B098F1 /* SocketProtocols.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SocketProtocols.swift; path = ../BlueSocket/Sources/SocketProtocols.swift; sourceTree = "<group>"; };
+		8C0ABD501EE89FCF00B098F1 /* Socket.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Socket.swift; path = ../BlueSocket/Sources/Socket.swift; sourceTree = "<group>"; };
+		8C0ABD511EE89FCF00B098F1 /* SocketUtils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SocketUtils.swift; path = ../BlueSocket/Sources/SocketUtils.swift; sourceTree = "<group>"; };
 		8C4223041CF7444C0047BDC3 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		8C4223051CF7444C0047BDC3 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		8C9896431ED8A3E800AA1670 /* BlueSSLService.podspec */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = BlueSSLService.podspec; sourceTree = "<group>"; };
 		__PBXFileRef_Package.swift /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
-		"__PBXFileRef_Packages/Socket-0.5.11/Sources/Socket.swift" /* Socket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Socket.swift; path = ../BlueSocket/Sources/Socket.swift; sourceTree = SOURCE_ROOT; };
-		"__PBXFileRef_Packages/Socket-0.5.11/Sources/SocketProtocols.swift" /* SocketProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SocketProtocols.swift; path = ../BlueSocket/Sources/SocketProtocols.swift; sourceTree = SOURCE_ROOT; };
-		"__PBXFileRef_Packages/Socket-0.5.11/Sources/SocketUtils.swift" /* SocketUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SocketUtils.swift; path = ../BlueSocket/Sources/SocketUtils.swift; sourceTree = SOURCE_ROOT; };
 		__PBXFileRef_SSLService.xcodeproj/Configs/Project.xcconfig /* Project.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Project.xcconfig; path = SSLService.xcodeproj/Configs/Project.xcconfig; sourceTree = "<group>"; };
 		__PBXFileRef_Sources/SSLService.swift /* SSLService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SSLService.swift; path = Sources/SSLService.swift; sourceTree = "<group>"; };
 		"_____Product_SSLService" /* libSSLService.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; path = libSSLService.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -57,10 +57,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		8C0ABD4E1EE89F2800B098F1 /* Socket */ = {
+			isa = PBXGroup;
+			children = (
+				8C0ABD501EE89FCF00B098F1 /* Socket.swift */,
+				8C0ABD4F1EE89FCF00B098F1 /* SocketProtocols.swift */,
+				8C0ABD511EE89FCF00B098F1 /* SocketUtils.swift */,
+			);
+			name = Socket;
+			sourceTree = "<group>";
+		};
 		Dependencies_ /* Dependencies */ = {
 			isa = PBXGroup;
 			children = (
-				"_______Group_Socket" /* Socket */,
+				8C0ABD4E1EE89F2800B098F1 /* Socket */,
 			);
 			name = Dependencies;
 			sourceTree = "<group>";
@@ -102,17 +112,6 @@
 				__PBXFileRef_Sources/SSLService.swift /* SSLService.swift */,
 			);
 			name = Sources;
-			sourceTree = "<group>";
-		};
-		"_______Group_Socket" /* Socket */ = {
-			isa = PBXGroup;
-			children = (
-				"__PBXFileRef_Packages/Socket-0.5.11/Sources/Socket.swift" /* Socket.swift */,
-				"__PBXFileRef_Packages/Socket-0.5.11/Sources/SocketProtocols.swift" /* SocketProtocols.swift */,
-				"__PBXFileRef_Packages/Socket-0.5.11/Sources/SocketUtils.swift" /* SocketUtils.swift */,
-			);
-			name = Socket;
-			path = "Packages/Socket-0.5.11/Sources";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -215,9 +214,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				8C5E99271CF7D63C008D4940 /* Socket.swift in Sources */,
-				8C5E99281CF7D63C008D4940 /* SocketProtocols.swift in Sources */,
-				8C5E99291CF7D63C008D4940 /* SocketUtils.swift in Sources */,
+				8C0ABD541EE89FD000B098F1 /* SocketUtils.swift in Sources */,
+				8C0ABD531EE89FD000B098F1 /* Socket.swift in Sources */,
+				8C0ABD521EE89FD000B098F1 /* SocketProtocols.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -255,6 +254,7 @@
 		_ReleaseConf_Socket /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				ENABLE_TESTABILITY = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
@@ -262,6 +262,7 @@
 				OTHER_SWIFT_FLAGS = "$(inherited)";
 				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PRODUCT_NAME = "lib$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};
@@ -289,6 +290,7 @@
 		"___DebugConf_Socket" /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				ENABLE_TESTABILITY = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
@@ -297,6 +299,7 @@
 				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PRODUCT_NAME = "lib$(TARGET_NAME)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
