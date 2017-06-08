@@ -1040,11 +1040,11 @@ public class SSLService: SSLServiceDelegate {
 					}
 					
 					// 	- Now extract what we need...
-                    let newArray = items! as [AnyObject] as NSArray
+					let newArray = items! as [AnyObject] as NSArray
 					if newArray.count == 0 {
 						let reason = "ERROR: Could not load content of PKCS12 file"
 						throw SSLError.fail(Int(ENOENT), reason)
-                    }
+					}
 					let dictionary = newArray.object(at: 0)
 					
 					//	-- Identity reference...
