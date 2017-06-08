@@ -25,14 +25,14 @@ import PackageDescription
 		name: "SSLService",
 		targets: [Target(name: "SSLService")],
 		dependencies: [
-			.Package(url: "https://github.com/ymesika/BlueSocket.git", majorVersion: 0, minor: 12),
+			.Package(url: "https://github.com/IBM-Swift/BlueSocket.git", majorVersion: 0, minor: 12),
 			],
 		exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"])
 		
 	#if os(Linux)
 		
 		package.dependencies.append(
-			.Package(url: "https://github.com/ymesika/OpenSSL.git", majorVersion: 0, minor: 3))
+			.Package(url: "https://github.com/IBM-Swift/OpenSSL.git", majorVersion: 0, minor: 3))
 		
 	#endif
 	
