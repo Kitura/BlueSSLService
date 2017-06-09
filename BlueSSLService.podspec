@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name        = "BlueSSLService"
-  s.version     = "0.12.40"
+  s.version     = "0.12.41"
   s.summary     = "SSL/TLS Add-in framework for BlueSocket in Swift"
   s.homepage    = "https://github.com/IBM-Swift/BlueSSLService"
   s.license     = { :type => "Apache License, Version 2.0" }
@@ -14,7 +14,7 @@ Pod::Spec.new do |s|
   s.tvos.deployment_target = "10.0"
   s.source   = { :git => "https://github.com/IBM-Swift/BlueSSLService.git", :tag => s.version }
   s.source_files = "Sources/*.swift"
-  s.dependency 'BlueSocket', '~> 0.12.52'
+  s.dependency 'BlueSocket', '~> 0.12.53'
   s.pod_target_xcconfig =  {
         'SWIFT_VERSION' => '3.1.1',
   }
