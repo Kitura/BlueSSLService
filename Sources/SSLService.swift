@@ -931,10 +931,13 @@ public class SSLService: SSLServiceDelegate {
 			// - Finally, setup ALPN/NPN callback functions
 			// -- NPN advertised protocols to be sent in ServerHello if requested
 			SSL_CTX_set_next_protos_advertised_cb(context, { ( ssl, data, len, arg ) in
+				
 				//E.g. data: [ 0x02, 0x68, 0x32 ] //2, 'h', '2'
 				var availBytes = [UInt8]()
 				let available = SSLService.availableAlpnProtocols
+				
 				for proto in available {
+					
 					availBytes.append(UInt8(proto.lengthOfBytes(using: .ascii)))
 					let protoBytes: [UInt8] = Array(proto.utf8)
 					availBytes.append(contentsOf: protoBytes)
@@ -943,10 +946,12 @@ public class SSLService: SSLServiceDelegate {
 				len?.pointee = UInt32(availBytes.count)
 				
 				return SSL_TLSEXT_ERR_OK
+				
 			}, nil)
 			
 			// -- Callback for selecting an ALPN protocol based on supported protocols
 			SSL_CTX_set_alpn_select_cb_wrapper(context, { (ssl, out, outlen, _in, _inlen, arg) in
+				
 				//_in is a buffer of bytes sent by the client within the ClientHello. The structure
 				//is a byte of length followed by ascii bytes for the name of the protocol.
 				//E.g. "\u{02}h2\u{08}http/1.1"
@@ -954,16 +959,21 @@ public class SSLService: SSLServiceDelegate {
 				// For each protocol listed in the _in buffer, check to see if it is also listed
 				// in the supported protocol. Select the first supported protocol.
 				if let _in = _in {
+					
 					let data = Data(bytes: _in, count: Int(_inlen))
 					let available = SSLService.availableAlpnProtocols
 					var lengthByteIndex = 0
+					
 					while lengthByteIndex < data.count {
+						
 						let lowerIndex = lengthByteIndex + 1
 						let upperIndex = lengthByteIndex + Int(data[lengthByteIndex]) + 1
 						let range:Range<Int> = lowerIndex ..< upperIndex
 						let protData = data.subdata(in: range)
 						if let inStr = String(data: protData, encoding: .ascii) {
+							
 							if available.contains(inStr) {
+								
 								//The protocol is supported, set it back in the out buffer and return
 								//an OK code
 								out?.pointee = _in + lowerIndex
@@ -979,8 +989,8 @@ public class SSLService: SSLServiceDelegate {
 				
 				// None of the provided protocol is supported. Return NOACK.
 				return SSL_TLSEXT_ERR_NOACK
+				
 			}, nil)
-		
 			
 		#else
 			
@@ -1139,18 +1149,19 @@ public class SSLService: SSLServiceDelegate {
 	/// If an ALPN protocol has been chose, it will be set in the 'negotiatedAlpnProtocol' field.
 	///
 	private func negotiateAlpnProtocols() {
-	var alpn: UnsafePointer<UInt8>? = nil
-	var alpnlen: UInt32 = 0
 	
-	SSL_get0_next_proto_negotiated(self.cSSL, &alpn, &alpnlen)
-	if (alpn == nil) {
-		SSL_get0_alpn_selected_wrapper(self.cSSL, &alpn, &alpnlen)
-	}
+		var alpn: UnsafePointer<UInt8>? = nil
+		var alpnlen: UInt32 = 0
 	
-	if alpn != nil && alpnlen > 0 {
-		let data = Data(bytes: alpn!, count: Int(alpnlen))
-		let alpnStr = String(data: data, encoding: .ascii)
-			negotiatedAlpnProtocol = alpnStr
+		SSL_get0_next_proto_negotiated(self.cSSL, &alpn, &alpnlen)
+		if (alpn == nil) {
+			SSL_get0_alpn_selected_wrapper(self.cSSL, &alpn, &alpnlen)
+		}
+	
+		if alpn != nil && alpnlen > 0 {
+			let data = Data(bytes: alpn!, count: Int(alpnlen))
+			let alpnStr = String(data: data, encoding: .ascii)
+				negotiatedAlpnProtocol = alpnStr
 		} else {
 			negotiatedAlpnProtocol = nil
 		}
