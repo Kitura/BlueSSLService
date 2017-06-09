@@ -324,6 +324,21 @@ public class SSLService: SSLServiceDelegate {
 		/// SSL Context
 		public private(set) var context: UnsafeMutablePointer<SSL_CTX>? = nil
 	
+	
+		// MARK: ALPN
+		
+		/// List of supported ALPN protocols
+		public func addSupportedAlpnProtocol(proto: String) {
+			if SSLService.availableAlpnProtocols.contains(proto) {
+				return
+			}
+			SSLService.availableAlpnProtocols.append(proto)
+		}
+		private static var availableAlpnProtocols = [String]()
+		
+		/// The negotiated ALPN protocol, if any
+		public private(set) var negotiatedAlpnProtocol: String?
+	
 	#else
 	
 		/// Socket Pointer containing the socket fd (passed to the `SSLRead` and `SSLWrite` callback routines).
@@ -333,21 +348,6 @@ public class SSLService: SSLServiceDelegate {
 		public private(set) var context: SSLContext?
 	
 	#endif
-
-	// MARK: ALPN
-
-	/// List of supported ALPN protocols
-	public func addSupportedAlpnProtocol(proto: String) {
-		if SSLService.availableAlpnProtocols.contains(proto) {
-			return
-		}
-		SSLService.availableAlpnProtocols.append(proto)
-	}
-	private static var availableAlpnProtocols = [String]()
-
-	/// The negotiated ALPN protocol, if any
-	public private(set) var negotiatedAlpnProtocol: String?
-	
 	
 	// MARK: Lifecycle
 	
