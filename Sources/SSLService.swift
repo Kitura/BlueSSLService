@@ -844,10 +844,8 @@ public class SSLService: SSLServiceDelegate {
 			}
 			SSL_CTX_set_verify_depth(context, SSLService.DEFAULT_VERIFY_DEPTH)
 			
-			#if USE_AUTO_ECDH
 			//	- Auto ECDH handling...  Note: requires OpenSSL 1.0.2 or greater.
-			SSL_CTX_ctrl(context, SSL_CTRL_SET_ECDH_AUTO, 1, nil)
-			#endif
+			SSL_CTX_setAutoECDH(context)
 			
 			// Then handle the client/server specific stuff...
 			if !self.isServer {
