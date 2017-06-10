@@ -42,8 +42,8 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 
 ### Package Dependencies
 
-* BlueSocket v0.12.51 or higher
-* OpenSSL v0.3.3 or higher for Linux
+* BlueSocket v0.12.53 or higher
+* OpenSSL v0.3.5 or higher for Linux
 
 *Note:* See `Package.swift` for details.
 
@@ -54,13 +54,6 @@ To build `SSLService` from the command line:
 ```
 % cd <path-to-clone>
 % swift build
-```
-
-To enable automatic ECDH handling with *OpenSSL 1.0.2 or higher*:
-
-```
-% cd <path-to-clone>
-% swift build -Xswiftc -DUSE_AUTO_ECDH
 ```
 
 ## Using BlueSSLService
