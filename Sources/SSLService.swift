@@ -1203,7 +1203,7 @@ public class SSLService: SSLServiceDelegate {
 			
 			status = SSLHandshake(sslContext)
 			
-		} while status == errSSLWouldBlock
+		} while status == errSSLWouldBlock || status == errSSLClosedAbort
 		
 		if status != errSecSuccess && status != errSSLPeerAuthCompleted {
 			
