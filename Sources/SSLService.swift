@@ -1201,7 +1201,7 @@ public class SSLService: SSLServiceDelegate {
 			
 			status = SSLHandshake(sslContext)
 			
-		} while status == errSSLWouldBlock || status == errSSLClosedAbort
+		} while status == errSSLWouldBlock
 		
 		if status != errSecSuccess && status != errSSLPeerAuthCompleted {
 			
