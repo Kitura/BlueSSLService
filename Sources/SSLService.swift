@@ -146,8 +146,8 @@ public class SSLService: SSLServiceDelegate {
         public private(set) var clientAllowsSelfSignedCertificates = false
 		
 		#if os(Linux)
-			/// Cipher suites to use. Defaults to `DEFAULT`
-			public var cipherSuite: String = "DEFAULT"
+			/// Cipher suites to use. Defaults to `DEFAULT:!DH`
+			public var cipherSuite: String = "DEFAULT:!DH"
 		#else
 			/// Cipher suites to use. Defaults to `14,13,2B,2F,2C,30,9E,9F,23,27,09,28,13,24,0A,14,67,33,6B,39,08,12,16,9C,9D,3C,3D,2F,35,0A`
 			// @FIXME: This isn't quite right, needs to be revisited.
