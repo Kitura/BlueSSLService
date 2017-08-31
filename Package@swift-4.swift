@@ -24,6 +24,14 @@ import PackageDescription
 
 #if os(Linux) || os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
 
+var packageDependencies: [Package.Dependency] = [.package(url: "https://github.com/IBM-Swift/BlueSocket.git", from: "0.12.0")]
+var targetDependencies: [Target.Dependency] = [.byNameItem(name: "Socket")]
+
+#if os(Linux)
+packageDependencies.append(.package(url: "https://github.com/IBM-Swift/OpenSSL.git", from: "0.3.0"))
+targetDependencies.append(.byNameItem(name: "OpenSSL"))
+#endif
+
 let package = Package(
     name: "SSLService",
 
@@ -34,27 +42,20 @@ let package = Package(
             targets: ["SSLService"]),
         ],
 
-    dependencies: [
+    dependencies:
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
-        .package(url: "https://github.com/IBM-Swift/BlueSocket.git", from: "0.12.0"),
-        ],
+        packageDependencies,
 
     targets: [
         // Targets are the basic building blocks of a package. A target defines a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages which this package depends on.
         .target(
             name: "SSLService",
-            dependencies: ["Socket"],
+            dependencies: targetDependencies,
             exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]),
         ]
 )
-
-#if os(Linux)
-
-package.dependencies.append(.package(url: "https://github.com/IBM-Swift/OpenSSL.git", from: "0.3.0"))
-
-#endif
 
 #else
 
