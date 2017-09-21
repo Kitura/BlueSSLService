@@ -40,6 +40,11 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 * One of the Swift Open Source toolchain listed above
 * OpenSSL is provided by the distribution
 
+### Other Platforms
+
+* **BlueSSLService** is **NOT** supported on *watchOS* since POSIX/BSD/Darwin sockets are not supported on the actual device although they are supported in the simulator.
+* **BlueSSLService** should work on *tvOS* but has **NOT** been tested.
+
 ### Package Dependencies
 
 * BlueSocket v0.12.53 or higher
