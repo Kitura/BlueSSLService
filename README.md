@@ -3,6 +3,7 @@
 ![Linux](https://img.shields.io/badge/os-linux-green.svg?style=flat)
 ![Apache 2](https://img.shields.io/badge/license-Apache2-blue.svg?style=flat)
 ![](https://img.shields.io/badge/Swift-3.0-orange.svg?style=flat)
+![](https://img.shields.io/badge/Swift-4.0-orange.svg?style=flat)
 [![Build Status - Master](https://travis-ci.org/IBM-Swift/BlueSSLService.svg?branch=master)](https://travis-ci.org/IBM-Swift/BlueSSLService) 
 
 # BlueSSLService
@@ -17,22 +18,24 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 ## Prerequisites
 
 ### Swift
+
 * Swift Open Source `swift-3.0.1-RELEASE` toolchain (**Minimum REQUIRED for latest release**)
-* Swift Open Source `swift-3.1.1-RELEASE` toolchain (**Recommended**)
-* Swift toolchain included in *Xcode Version 9.0 beta (9M136h) or higher*.
+* Swift Open Source `swift-4.0.0-RELEASE` toolchain (**Recommended**)
+* Swift toolchain included in *Xcode Version 9.0 (9A325) or higher*.
 
 ### macOS
 
 * macOS 10.11.6 (*El Capitan*) or higher
 * Xcode Version 8.3.2 (8E2002) or higher using one of the above toolchains (*Recommended*)
-* Xcode Version 9.0 beta (9M136h) or higher using the included toolchain.
+* Xcode Version 9.0  (9A325) or higher using the included toolchain.
 * Secure Transport is provided by macOS
 
 ### iOS
+
 * iOS 10.0 or higher
 * Xcode Version 8.3.2 (8E2002) or higher using one of the above toolchains (*Recommended*)
-* Xcode Version 9.0 beta (9M136h) or higher using the included toolchain.
-* Secure Transport is provided by iOS.
+* Xcode Version 9.0  (9A325) or higher using the included toolchain.
+* Secure Transport is provided by iOS
 
 ### Linux
 
@@ -47,7 +50,7 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 
 ### Package Dependencies
 
-* BlueSocket v0.12.53 or higher
+* BlueSocket v0.12.69 or higher
 * OpenSSL v0.3.5 or higher for Linux
 
 *Note:* See `Package.swift` for details.
