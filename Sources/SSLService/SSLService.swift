@@ -1308,7 +1308,7 @@ public class SSLService: SSLServiceDelegate {
 		
 		#if os(Linux)
 			
-			if errorCode == 0 {
+			if errorCode == 0 || errorCode == SSL_ERROR_SSL {
 				errorCode = Int32(ERR_get_error())
 			}
 			
@@ -1320,6 +1320,10 @@ public class SSLService: SSLServiceDelegate {
 			
 			if let errorStr = ERR_reason_error_string(UInt(errorCode)) {
 				errorString = String(validatingUTF8: errorStr)!
+
+				if let errorFunc = ERR_func_error_string(UInt(errorCode)) {
+					errorString = String(validatingUTF8: errorFunc)! + ":" + errorString
+				}
 			} else {
 				errorString = "Could not determine error reason."
 			}
