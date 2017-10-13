@@ -490,6 +490,7 @@ public class SSLService: SSLServiceDelegate {
 				let sslConnect = try prepareConnection(socket: socket)
 				
 				// Start the handshake...
+				ERR_clear_error()
 				let rc = SSL_accept(sslConnect)
 				if rc <= 0 {
 					
@@ -527,6 +528,7 @@ public class SSLService: SSLServiceDelegate {
 			let sslConnect = try prepareConnection(socket: socket)
 			
 			// Start the handshake...
+			ERR_clear_error()
 			let rc = SSL_connect(sslConnect)
 			if rc <= 0 {
 				
@@ -565,6 +567,7 @@ public class SSLService: SSLServiceDelegate {
 					throw SSLError.fail(Int(ECONNABORTED), reason)
 				}
 			
+				ERR_clear_error()
 				let rc = SSL_write(sslConnect, buffer, Int32(bufSize))
 				if rc < 0 {
 				
@@ -631,6 +634,7 @@ public class SSLService: SSLServiceDelegate {
 					throw SSLError.fail(Int(ECONNABORTED), reason)
 				}
 			
+				ERR_clear_error()
 				let rc = SSL_read(sslConnect, buffer, Int32(bufSize))
 				if rc < 0 {
 				
