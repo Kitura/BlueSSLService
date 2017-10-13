@@ -490,6 +490,7 @@ public class SSLService: SSLServiceDelegate {
 				let sslConnect = try prepareConnection(socket: socket)
 				
 				// Start the handshake...
+				ERR_clear_error()
 				let rc = SSL_accept(sslConnect)
 				if rc <= 0 {
 					
@@ -527,6 +528,7 @@ public class SSLService: SSLServiceDelegate {
 			let sslConnect = try prepareConnection(socket: socket)
 			
 			// Start the handshake...
+			ERR_clear_error()
 			let rc = SSL_connect(sslConnect)
 			if rc <= 0 {
 				
@@ -565,6 +567,7 @@ public class SSLService: SSLServiceDelegate {
 					throw SSLError.fail(Int(ECONNABORTED), reason)
 				}
 			
+				ERR_clear_error()
 				let rc = SSL_write(sslConnect, buffer, Int32(bufSize))
 				if rc < 0 {
 				
@@ -631,6 +634,7 @@ public class SSLService: SSLServiceDelegate {
 					throw SSLError.fail(Int(ECONNABORTED), reason)
 				}
 			
+				ERR_clear_error()
 				let rc = SSL_read(sslConnect, buffer, Int32(bufSize))
 				if rc < 0 {
 				
@@ -1304,7 +1308,7 @@ public class SSLService: SSLServiceDelegate {
 		
 		#if os(Linux)
 			
-			if errorCode == 0 {
+			if errorCode == 0 || errorCode == SSL_ERROR_SSL {
 				errorCode = Int32(ERR_get_error())
 			}
 			
@@ -1316,6 +1320,10 @@ public class SSLService: SSLServiceDelegate {
 			
 			if let errorStr = ERR_reason_error_string(UInt(errorCode)) {
 				errorString = String(validatingUTF8: errorStr)!
+
+				if let errorFunc = ERR_func_error_string(UInt(errorCode)) {
+					errorString = String(validatingUTF8: errorFunc)! + ":" + errorString
+				}
 			} else {
 				errorString = "Could not determine error reason."
 			}
