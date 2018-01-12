@@ -324,6 +324,21 @@ public class SSLService: SSLServiceDelegate {
 		/// SSL Context
 		public private(set) var context: UnsafeMutablePointer<SSL_CTX>? = nil
 	
+	
+		// MARK: ALPN
+		
+		/// List of supported ALPN protocols
+		public func addSupportedAlpnProtocol(proto: String) {
+			if SSLService.availableAlpnProtocols.contains(proto) {
+				return
+			}
+			SSLService.availableAlpnProtocols.append(proto)
+		}
+		private static var availableAlpnProtocols = [String]()
+		
+		/// The negotiated ALPN protocol, if any
+		public private(set) var negotiatedAlpnProtocol: String?
+	
 	#else
 	
 		/// Socket Pointer containing the socket fd (passed to the `SSLRead` and `SSLWrite` callback routines).
@@ -333,38 +348,6 @@ public class SSLService: SSLServiceDelegate {
 		public private(set) var context: SSLContext?
 	
 	#endif
-    
-    // MARK: ALPN
-    
-    /// List of supported ALPN protocols
-    public func addSupportedAlpnProtocol(proto: String) {
-        #if !os(Linux)
-            // macOS/iOS provide access to ALPN in SecureTransport as of 10.13/11.0, etc.
-            guard #available(macOS 10.13, iOS 11.0, tvOS 11.0, *) else { return }
-        #endif
-        
-        if SSLService.availableAlpnProtocols.contains(proto) {
-            return
-        }
-        SSLService.availableAlpnProtocols.append(proto)
-    }
-    private static var availableAlpnProtocols = [String]()
-    
-    /// The negotiated ALPN protocol, if any
-    public private(set) var negotiatedAlpnProtocol: String?
-    
-    public static var isAlpnSupported: Bool {
-        #if os(Linux)
-            return true
-        #else
-            if #available(macOS 10.13, iOS 11.0, watchOS 4.0, tvOS 11.0, *) {
-                return true
-            }
-            else {
-                return false
-            }
-        #endif
-    }
 	
 	// MARK: Lifecycle
 	
@@ -516,8 +499,7 @@ public class SSLService: SSLServiceDelegate {
 				
 			#else
 				
-				// Prepare the connection and start the handshake process.
-                // This will supply our ALPN protocols to SecureTransport for negotiation.
+				// Prepare the connection and start the handshake process...
 				try prepareConnection(socket: socket)
 				
 			#endif
@@ -1216,10 +1198,7 @@ public class SSLService: SSLServiceDelegate {
         if isServer == false && configuration.clientAllowsSelfSignedCertificates == true {
             SSLSetSessionOption(sslContext, .breakOnServerAuth, true)
         }
-        
-        if #available(OSX 10.13, iOS 11.0, tvOS 11.0, watchOS 4.0, *) {
-            try setAlpnProtocols(on: sslContext)
-        }
+
 		
 		// Start and repeat the handshake process until it either completes or fails...
 		repeat {
@@ -1232,50 +1211,7 @@ public class SSLService: SSLServiceDelegate {
 			
 			try self.throwLastError(source: "SSLHandshake", err: status)
 		}
-        
-        if #available(OSX 10.13, iOS 11.0, tvOS 11.0, watchOS 4.0, *) {
-            completeAlpnProtocolNegotiation(on: sslContext)
-        }
 	}
-    
-    @available(macOS 10.13, iOS 11.0, tvOS 11.0, watchOS 4.0, *)
-    private func setAlpnProtocols(on sslContext: SSLContext) throws {
-        
-        guard !SSLService.availableAlpnProtocols.isEmpty else { return }
-        
-        // Tell SecureTransport about our chosen protocols.
-        // It expects a CFArray of CFStrings, which are all bridgable from [String].
-        let cfStrings = SSLService.availableAlpnProtocols as [CFString]
-        let cfArray = cfStrings as CFArray
-        
-        let status: OSStatus = SSLSetALPNProtocols(sslContext, cfArray)
-        if status != errSecSuccess {
-            try self.throwLastError(source: "SSLSetALPNProtocols", err: status)
-        }
-    }
-    
-    @available(macOS 10.13, iOS 11.0, tvOS 11.0, watchOS 4.0, *)
-    private func completeAlpnProtocolNegotiation(on sslContext: SSLContext) {
-        
-        guard !SSLService.availableAlpnProtocols.isEmpty else { return }
-        
-        // Look at the protocols handed back from the peer and find a match.
-        var peerProtocols: Unmanaged<CFArray>? = nil
-        let status: OSStatus = SSLCopyALPNProtocols(sslContext, &peerProtocols)
-        
-        // Should we fail completely if we couldn't pull the list?
-        // Dealing with CFArrays of CFStrings is rather a pain in the `as`...
-        guard let protocolsNS = peerProtocols?.takeRetainedValue() as NSArray?, status == errSecSuccess else { return }
-        let protocols = protocolsNS as! [CFString]
-        for protoCF in protocols {
-            let protoName = protoCF as String
-            
-            if (SSLService.availableAlpnProtocols.contains(protoName)) {
-                negotiatedAlpnProtocol = protoName
-                break
-            }
-        }
-    }
 	
 #endif
 	
