@@ -774,7 +774,7 @@ public class SSLService: SSLServiceDelegate {
 				
 				throw SSLError.fail(Int(ENOENT), "CA Certificate directory path doesn't exist.")
 			}
-			#if os(Linux)
+			#if !os(Linux) || swift(>=4.1)
 				if !isDir.boolValue {
 					
 					throw SSLError.fail(Int(ENOENT), "CA Certificate directory path doesn't specify a directory.")
