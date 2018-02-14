@@ -463,7 +463,11 @@ public class SSLService: SSLServiceDelegate {
 			}
 			
 			// Free the socket pointer...
-			self.socketPtr.deallocate(capacity: 1)
+            #if swift(>=4.1)
+                self.socketPtr.deallocate()
+            #else
+                self.socketPtr.deallocate(capacity: 1)
+            #endif
 			
 		#endif
 	}
@@ -771,12 +775,12 @@ public class SSLService: SSLServiceDelegate {
 				throw SSLError.fail(Int(ENOENT), "CA Certificate directory path doesn't exist.")
 			}
 			#if os(Linux)
-				if !isDir {
+				if !isDir.boolValue {
 					
 					throw SSLError.fail(Int(ENOENT), "CA Certificate directory path doesn't specify a directory.")
 				}
 			#else
-				if !isDir.boolValue {
+				if !isDir {
 					
 					throw SSLError.fail(Int(ENOENT), "CA Certificate directory path doesn't specify a directory.")
 				}
