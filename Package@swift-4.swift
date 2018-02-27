@@ -22,14 +22,14 @@
 
 import PackageDescription
 
-#if os(Linux) || os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+#if os(Linux) || os(macOS) || os(iOS) || os(tvOS)
 
-var packageDependencies: [Package.Dependency] = [.package(url: "https://github.com/IBM-Swift/BlueSocket.git", from: "0.12.0")]
+var packageDependencies: [Package.Dependency] = [.package(url: "https://github.com/IBM-Swift/BlueSocket.git", from: "1.0.0")]
 var targetDependencies: [Target.Dependency] = [.byNameItem(name: "Socket")]
 
 #if os(Linux)
 	
-packageDependencies.append(.package(url: "https://github.com/IBM-Swift/OpenSSL.git", from: "0.3.0"))
+packageDependencies.append(.package(url: "https://github.com/IBM-Swift/OpenSSL.git", from: "1.0.0"))
 targetDependencies.append(.byNameItem(name: "OpenSSL"))
 
 #endif
