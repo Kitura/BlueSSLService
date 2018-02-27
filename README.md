@@ -11,47 +11,38 @@
 ## Overview
 SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.git) in Swift using the Swift Package Manager. Works on supported Apple platforms (using Secure Transport) and on Linux (using OpenSSL).
 
-## Contents
-
-* SSLService: Adds SSL/TLS support to [BlueSocket](https://github.com/IBM-Swift/BlueSocket). Pure Swift. 
-
 ## Prerequisites
 
 ### Swift
 
-* Swift Open Source `swift-3.0.1-RELEASE` toolchain (**Minimum REQUIRED for latest release**)
-* Swift Open Source `swift-4.0.0-RELEASE` toolchain (**Recommended**)
-* Swift toolchain included in *Xcode Version 9.0 (9A325) or higher*.
+* Swift Open Source `swift-4.0.0-RELEASE` toolchain (**Minimum REQUIRED for latest release**)
+* Swift Open Source `swift-4.0.3-RELEASE` toolchain (**Recommended**)
+* Swift toolchain included in *Xcode Version 9.2 (9C40b) or higher*.
 
 ### macOS
 
-* macOS 10.11.6 (*El Capitan*) or higher
-* Xcode Version 8.3.2 (8E2002) or higher using one of the above toolchains (*Recommended*)
-* Xcode Version 9.0  (9A325) or higher using the included toolchain.
-* Secure Transport is provided by macOS
+* macOS 10.11.6 (*El Capitan*) or higher.
+* Xcode Version 9.0  (9A325) or higher using one of the above toolchains.
+* Xcode Version 9.2 (9C40b) or higher using the included toolchain (*Recommended*).
+* Secure Transport is provided by macOS.
 
 ### iOS
 
 * iOS 10.0 or higher
-* Xcode Version 8.3.2 (8E2002) or higher using one of the above toolchains (*Recommended*)
-* Xcode Version 9.0  (9A325) or higher using the included toolchain.
-* Secure Transport is provided by iOS
+* Xcode Version 9.0  (9A325) or higher using one of the above toolchains.
+* Xcode Version 9.2 (9C40b) or higher using the included toolchain (*Recommended*).
+* Secure Transport is provided by iOS.
 
 ### Linux
 
-* Ubuntu 16.04 (or 16.10 but only tested on 16.04)
-* One of the Swift Open Source toolchain listed above
-* OpenSSL is provided by the distribution
+* Ubuntu 16.04 (or 16.10 but only tested on 16.04).
+* One of the Swift Open Source toolchain listed above.
+* OpenSSL 1.0.x is provided by the distribution.  **Note:** Only the 1.0.x releases of OpenSSL are currently supported.
 
 ### Other Platforms
 
 * **BlueSSLService** is **NOT** supported on *watchOS* since POSIX/BSD/Darwin sockets are not supported on the actual device although they are supported in the simulator.
 * **BlueSSLService** should work on *tvOS* but has **NOT** been tested.
-
-### Package Dependencies
-
-* BlueSocket v0.12.70 or higher
-* OpenSSL v0.3.5 or higher for Linux
 
 *Note:* See `Package.swift` for details.
 
