@@ -858,7 +858,7 @@ public class SSLService: SSLServiceDelegate {
 			// Then handle the client/server specific stuff...
 			if !self.isServer {
 				
-				SSL_CTX_ctrl(context, SSL_CTRL_OPTIONS, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION, nil)
+				SSL_CTX_ctrl(context, SSL_CTRL_OPTIONS, CLong(SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION), nil)
 			}
 			
 			// Now configure the rest...
