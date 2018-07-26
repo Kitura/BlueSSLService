@@ -38,6 +38,7 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 * Ubuntu 16.04 (or 16.10 but only tested on 16.04).
 * One of the Swift Open Source toolchain listed above.
 * OpenSSL 1.0.x is provided by the distribution.  **Note:** Only the 1.0.x releases of OpenSSL are currently supported.
+* The **libssl-dev** package is required to be installed when building.
 
 ### Other Platforms
 
