@@ -231,13 +231,14 @@
 				TargetAttributes = {
 					8C1160921FC4805500CC4136 = {
 						CreatedOnToolsVersion = 9.0;
+						LastSwiftMigration = 1000;
 						ProvisioningStyle = Automatic;
 					};
 					"______Target_SSLService" = {
-						LastSwiftMigration = 0900;
+						LastSwiftMigration = 1000;
 					};
 					"______Target_Socket" = {
-						LastSwiftMigration = 0900;
+						LastSwiftMigration = 1000;
 					};
 				};
 			};
