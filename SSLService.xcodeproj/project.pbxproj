@@ -375,7 +375,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 4.0;
+				SWIFT_VERSION = 4.2;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -419,7 +419,7 @@
 				PRODUCT_NAME = SSLService;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 4.0;
+				SWIFT_VERSION = 4.2;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -442,7 +442,7 @@
 				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PRODUCT_NAME = "lib$(TARGET_NAME)";
 				SWIFT_INCLUDE_PATHS = "\"$SRCROOT/OpenSSL\"";
-				SWIFT_VERSION = 4.0;
+				SWIFT_VERSION = 4.2;
 				USER_HEADER_SEARCH_PATHS = /usr/local/opt/openssl/include;
 			};
 			name = Release;
@@ -481,7 +481,7 @@
 				PRODUCT_NAME = "lib$(TARGET_NAME)";
 				SWIFT_INCLUDE_PATHS = "\"$SRCROOT/OpenSSL\"";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 4.0;
+				SWIFT_VERSION = 4.2;
 				USER_HEADER_SEARCH_PATHS = /usr/local/opt/openssl/include;
 			};
 			name = Debug;
