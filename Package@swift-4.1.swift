@@ -1,4 +1,4 @@
-// swift-tools-version:4.2
+// swift-tools-version:4.0
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 //
@@ -25,23 +25,13 @@ import PackageDescription
 #if os(Linux) || os(macOS) || os(iOS) || os(tvOS)
 
 var packageDependencies: [Package.Dependency] = [.package(url: "https://github.com/IBM-Swift/BlueSocket.git", from: "1.0.0")]
-var targetDependencies: [Target.Dependency] = [.byName(name: "Socket")]
+var targetDependencies: [Target.Dependency] = [.byNameItem(name: "Socket")]
 
 #if os(Linux)
-targetDependencies.append(.target(name: "OpenSSLLocal1"))
-#endif
+	
+packageDependencies.append(.package(url: "https://github.com/IBM-Swift/OpenSSL.git", from: "1.0.0"))
+targetDependencies.append(.byNameItem(name: "OpenSSL"))
 
-var targets: [Target] = [
-    .target(
-        name: "SSLService",
-        dependencies: targetDependencies,
-        exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]),
-]
-
-#if os(Linux)
-targets.append(
-    .systemLibrary(name: "OpenSSLLocal1")
-)
 #endif
 
 let package = Package(
@@ -59,7 +49,14 @@ let package = Package(
         // .package(url: /* package url */, from: "1.0.0"),
         packageDependencies,
 
-    targets: targets
+    targets: [
+        // Targets are the basic building blocks of a package. A target defines a module or a test suite.
+        // Targets can depend on other targets in this package, and on products in packages which this package depends on.
+        .target(
+            name: "SSLService",
+            dependencies: targetDependencies,
+            exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]),
+        ]
 )
 
 #else
