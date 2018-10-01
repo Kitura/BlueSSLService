@@ -23,7 +23,11 @@ import Foundation
 import Socket
 
 #if os(Linux)
+#if swift(>=4.2)
+	import OpenSSLLocal1
+#else
 	import OpenSSL
+#endif
 #endif
 
 import Dispatch

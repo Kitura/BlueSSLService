@@ -28,7 +28,7 @@ var packageDependencies: [Package.Dependency] = [.package(url: "https://github.c
 var targetDependencies: [Target.Dependency] = [.byName(name: "Socket")]
 
 #if os(Linux)
-targetDependencies.append(.target(name: "OpenSSL"))
+targetDependencies.append(.target(name: "OpenSSLLocal1"))
 #endif
 
 var targets: [Target] = [
@@ -40,7 +40,7 @@ var targets: [Target] = [
 
 #if os(Linux)
 targets.append(
-    .systemLibrary(name: "OpenSSL")
+    .systemLibrary(name: "OpenSSLLocal1")
 )
 #endif
 
