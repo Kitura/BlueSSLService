@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 
-module OpenSSL [system] {
+module OpenSSLLocal1 [system] {
        header "shim.h" 
        link "ssl"
        link "crypto"
