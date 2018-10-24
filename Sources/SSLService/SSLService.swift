@@ -18,16 +18,6 @@
 // 	See the License for the specific language governing permissions and
 // 	limitations under the License.
 
-//
-//  This source file includes content derived from Apple swift-nio-ssl open source project
-//  (https://github.com/apple/swift-nio-ssl/blob/master/Sources/NIOOpenSSL/SSLPointerTricks.swift)
-//
-//  Copyright (c) 2017-2018 Apple Inc. and the SwiftNIO project authors
-//  Licensed under Apache License v2.0
-//
-//  See https://github.com/apple/swift-nio-ssl/blob/master/LICENSE.txt for license information
-//
-
 import Foundation
 import Socket
 
@@ -322,40 +312,56 @@ public class SSLService: SSLServiceDelegate {
 	public private(set) var rwDispatch = SSLReadWriteDispatcher()
 	
 	#if os(Linux)
-	
-		/// SSL Connection
-		public private(set) var cSSL: OpaquePointer? = nil
-	
-		/// SSL Method
-		/// **Note:** We use `SSLv23` which causes negotiation of the highest available SSL/TLS version.
-		public private(set) var method: OpaquePointer? = nil
-	
-		/// SSL Context
-		public private(set) var context: OpaquePointer? = nil
-	
-	
+
+                #if swift(>=4.2)
+
+		    /// SSL Connection
+		    public private(set) var cSSL: OpaquePointer? = nil
+
+		    /// SSL Method
+		    /// **Note:** We use `SSLv23` which causes negotiation of the highest available SSL/TLS version.
+		    public private(set) var method: OpaquePointer? = nil
+
+		    /// SSL Context
+		    public private(set) var context: OpaquePointer? = nil
+
+                #else
+
+                    /// SSL Connection
+                    public private(set) var cSSL: UnsafeMutablePointer<SSL>? = nil
+
+                    /// SSL Method
+                    /// **Note:** We use `SSLv23` which causes negotiation of the highest available SSL/TLS version.
+                    public private(set) var method: UnsafePointer<SSL_METHOD>? = nil
+
+                    /// SSL Context
+                    public private(set) var context: UnsafeMutablePointer<SSL_CTX>? = nil
+
+                #endif
+
 		// MARK: ALPN
 		
 		/// List of supported ALPN protocols
 		public func addSupportedAlpnProtocol(proto: String) {
-			if SSLService.availableAlpnProtocols.contains(proto) {
-				return
-			}
-			SSLService.availableAlpnProtocols.append(proto)
-		}
-		private static var availableAlpnProtocols = [String]()
-		
+		    if SSLService.availableAlpnProtocols.contains(proto) {
+			return
+		    }
+		    SSLService.availableAlpnProtocols.append(proto)
+                }
+
+                private static var availableAlpnProtocols = [String]()
+
 		/// The negotiated ALPN protocol, if any
 		public private(set) var negotiatedAlpnProtocol: String?
-	
+
 	#else
-	
+
 		/// Socket Pointer containing the socket fd (passed to the `SSLRead` and `SSLWrite` callback routines).
 		public private(set) var socketPtr = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
-	
+
 		/// SSL Context
 		public private(set) var context: SSLContext?
-	
+
 	#endif
 	
 	// MARK: Lifecycle
@@ -411,18 +417,38 @@ public class SSLService: SSLServiceDelegate {
 			// Common initialization...
 			// 	- We only do this once...
 			if !SSLService.initialized {
-                                OpenSSL_SSL_init()
+
+                                #if swift(>=4.2)
+
+                                    OpenSSL_SSL_init()
+
+                                #else
+
+                                    SSL_library_init()
+				    SSL_load_error_strings()
+				    OPENSSL_config(nil)
+				    OPENSSL_add_all_algorithms_conf()
+
+                                #endif
+
 				SSLService.initialized = true
 			}
-			
+
 			// Server or client specific method determination...
 			if isServer {
-				
-				self.method = .init(OpenSSL_server_method())
-				
+                                #if swift(>=4.2)
+				    self.method = .init(OpenSSL_server_method())
+                                #else
+                                    self.method = SSLv23_server_method()
+                                #endif
+
 			} else {
 				
-				self.method = .init(OpenSSL_client_method())
+                                #if swift(>=4.2)
+				    self.method = .init(OpenSSL_client_method())
+                                #else
+                                   self.method = SSLv23_client_method()
+                                #endif
 			}
 			
 		#endif
@@ -442,18 +468,18 @@ public class SSLService: SSLServiceDelegate {
 			if self.cSSL != nil {
 				
 				// This should avoid receiving the SIGPIPE when shutting down a session...
-				let rc = SSL_get_shutdown(.create(optional: self.cSSL!))
+				let rc = SSL_get_shutdown(.make(optional: self.cSSL!))
 				if rc >= 0 {
-					SSL_shutdown(.create(optional: self.cSSL!))
+					SSL_shutdown(.make(optional: self.cSSL!))
 				}
 				
 				// Finish cleaning up...
-				SSL_free(.create(optional: self.cSSL!))
+				SSL_free(.make(optional: self.cSSL!))
 			}
 			
 			// Now the context...
 			if self.context != nil {
-				SSL_CTX_free(.create(optional: self.context!))
+				SSL_CTX_free(.make(optional: self.context!))
 			}
 			
 			// Finally, finish cleanup...
@@ -501,10 +527,10 @@ public class SSLService: SSLServiceDelegate {
 				
 				// Start the handshake...
 				ERR_clear_error()
-				let rc = SSL_accept(.create(optional: sslConnect))
+				let rc = SSL_accept(.make(optional: sslConnect))
 				if rc <= 0 {
 					
-					try self.throwLastError(source: "SSL_accept", err: SSL_get_error(.create(optional: sslConnect), rc))
+					try self.throwLastError(source: "SSL_accept", err: SSL_get_error(.make(optional: sslConnect), rc))
 				}
 				
 			#else
@@ -531,27 +557,27 @@ public class SSLService: SSLServiceDelegate {
 	/// - Parameter socket:	The connected `Socket` instance.
 	///
 	public func onConnect(socket: Socket) throws {
-		
+
 		#if os(Linux)
-			
+
 			// Prepare the connection...
 			let sslConnect = try prepareConnection(socket: socket)
 			
 			// Start the handshake...
 			ERR_clear_error()
-			let rc = SSL_connect(.create(optional: sslConnect))
+			let rc = SSL_connect(.make(optional: sslConnect))
 			if rc <= 0 {
 				
-				try self.throwLastError(source: "SSL_connect", err: SSL_get_error(.create(optional: sslConnect), rc))
+				try self.throwLastError(source: "SSL_connect", err: SSL_get_error(.make(optional: sslConnect), rc))
 			}
 			
 		#else
-			
+
 			// Prepare the connection and start the handshake process...
 			try prepareConnection(socket: socket)
 			
 		#endif
-		
+
 		// Verify the connection...
 		try self.verifyConnection()
 	}
@@ -578,10 +604,10 @@ public class SSLService: SSLServiceDelegate {
 				}
 			
 				ERR_clear_error()
-				let rc = SSL_write(.create(optional: sslConnect), buffer, Int32(bufSize))
+				let rc = SSL_write(.make(optional: sslConnect), buffer, Int32(bufSize))
 				if rc < 0 {
 				
-					let lastError = SSL_get_error(.create(optional: sslConnect), rc)
+					let lastError = SSL_get_error(.make(optional: sslConnect), rc)
 					if lastError == SSL_ERROR_WANT_READ || lastError == SSL_ERROR_WANT_WRITE {
 						
 						throw SSLError.retryNeeded
@@ -645,10 +671,10 @@ public class SSLService: SSLServiceDelegate {
 				}
 			
 				ERR_clear_error()
-				let rc = SSL_read(.create(optional: sslConnect), buffer, Int32(bufSize))
+				let rc = SSL_read(.make(optional: sslConnect), buffer, Int32(bufSize))
 				if rc < 0 {
 				
-					let lastError = SSL_get_error(.create(optional: sslConnect), rc)
+					let lastError = SSL_get_error(.make(optional: sslConnect), rc)
 					if lastError == SSL_ERROR_WANT_READ || lastError == SSL_ERROR_WANT_WRITE {
 
 						errno = EAGAIN
@@ -718,7 +744,7 @@ public class SSLService: SSLServiceDelegate {
 				certString.utf8.count > 0 else {
 					
 					throw SSLError.fail(Int(ENOENT), "PEM Certificate String is not valid.")
-			}
+				}
 			return
 		}
         
@@ -836,7 +862,7 @@ public class SSLService: SSLServiceDelegate {
 			}
 			
 			// Now we can create the context...
-			self.context = .init(SSL_CTX_new(.create(optional: method)))
+			self.context = .init(SSL_CTX_new(.make(optional: method)))
 			
 			guard let context = self.context else {
 				
@@ -847,26 +873,34 @@ public class SSLService: SSLServiceDelegate {
 			
 			// Handle the stuff common to both client and server...
 			//	- Auto retry...
-                        OpenSSL_SSL_CTX_set_mode(.create(optional: context), Int(SSL_MODE_AUTO_RETRY))
+                        #if swift(>=4.2)
+                            OpenSSL_SSL_CTX_set_mode(.make(optional: context), Int(SSL_MODE_AUTO_RETRY))
+                        #else
+                            SSL_CTX_ctrl(context, SSL_CTRL_MODE, SSL_MODE_AUTO_RETRY, nil)
+                        #endif
 
 			//	- User selected cipher list...
-			SSL_CTX_set_cipher_list(.create(optional: context), self.configuration.cipherSuite)
+			SSL_CTX_set_cipher_list(.make(optional: context), self.configuration.cipherSuite)
 
 			//	- Verification behavior...
 			if self.configuration.certsAreSelfSigned {
-				SSL_CTX_set_verify(.create(optional: context), SSL_VERIFY_NONE, nil)
+				SSL_CTX_set_verify(.make(optional: context), SSL_VERIFY_NONE, nil)
 			}
-			SSL_CTX_set_verify_depth(.create(optional: context), SSLService.DEFAULT_VERIFY_DEPTH)
+			SSL_CTX_set_verify_depth(.make(optional: context), SSLService.DEFAULT_VERIFY_DEPTH)
 			
 			//	- Auto ECDH handling...  Note: requires OpenSSL 1.0.2 or greater.
-			SSL_CTX_setAutoECDH(.create(optional: context))
+			SSL_CTX_setAutoECDH(.make(optional: context))
 			
 			// Then handle the client/server specific stuff...
 			if !self.isServer {
-				
-                                OpenSSL_SSL_CTX_set_options(.create(optional: context))
+
+                                #if swift(>=4.2)
+                                    OpenSSL_SSL_CTX_set_options(.make(optional: context))
+                                #else
+                                    SSL_CTX_ctrl(context, SSL_CTRL_OPTIONS, CLong(SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION), nil)
+                                #endif
 			}
-			
+
 			// Now configure the rest...
 			//	Note: We've already verified the configuration, so we've at least got the minimum requirements.
 			// 	- First process the CA certificate(s) if any...
@@ -876,7 +910,7 @@ public class SSLService: SSLServiceDelegate {
 				let caFile = self.configuration.caCertificateFilePath
 				let caPath = self.configuration.caCertificateDirPath
 				
-				rc = SSL_CTX_load_verify_locations(.create(optional: context), caFile, caPath)
+				rc = SSL_CTX_load_verify_locations(.make(optional: context), caFile, caPath)
 				if rc <= 0 {
 					
 					try self.throwLastError(source: "CA Certificate file/dir")
@@ -886,7 +920,7 @@ public class SSLService: SSLServiceDelegate {
 			//	- Then the app certificate...
 			if let certFilePath = self.configuration.certificateFilePath {
 				
-				rc = SSL_CTX_use_certificate_file(.create(optional: context), certFilePath, SSL_FILETYPE_PEM)
+				rc = SSL_CTX_use_certificate_file(.make(optional: context), certFilePath, SSL_FILETYPE_PEM)
 				if rc <= 0 {
 					
 					try self.throwLastError(source: "Certificate")
@@ -896,14 +930,14 @@ public class SSLService: SSLServiceDelegate {
 			//	- An' the corresponding Private key file...
 			if let keyFilePath = self.configuration.keyFilePath {
 				
-				rc = SSL_CTX_use_PrivateKey_file(.create(optional: context), keyFilePath, SSL_FILETYPE_PEM)
+				rc = SSL_CTX_use_PrivateKey_file(.make(optional: context), keyFilePath, SSL_FILETYPE_PEM)
 				if rc <= 0 {
 					
 					try self.throwLastError(source: "Key file")
 				}
 				
 				// Check it for consistency...
-				rc = SSL_CTX_check_private_key(.create(optional: context))
+				rc = SSL_CTX_check_private_key(.make(optional: context))
 				if rc <= 0 {
 					
 					try self.throwLastError(source: "Check private key")
@@ -913,7 +947,7 @@ public class SSLService: SSLServiceDelegate {
 			//	- Now, if present, the certificate chain path...
 			if let chainPath = configuration.certificateChainFilePath {
 				
-				rc = SSL_CTX_use_certificate_chain_file(.create(optional: context), chainPath)
+				rc = SSL_CTX_use_certificate_chain_file(.make(optional: context), chainPath)
 				if rc <= 0 {
 					
 					try self.throwLastError(source: "Certificate chain file")
@@ -933,7 +967,7 @@ public class SSLService: SSLServiceDelegate {
 					
 					try self.throwLastError(source: "PEM Certificate String to X509")
 				}
-				rc = SSL_CTX_use_certificate(.create(optional: context), certificate)
+				rc = SSL_CTX_use_certificate(.make(optional: context), certificate)
 				if rc <= 0 {
 					
 					try self.throwLastError(source: "PEM Certificate String")
@@ -942,7 +976,7 @@ public class SSLService: SSLServiceDelegate {
 			
 			// - Finally, setup ALPN/NPN callback functions
 			// -- NPN advertised protocols to be sent in ServerHello if requested
-			SSL_CTX_set_next_protos_advertised_cb(.create(optional: context), { ( ssl, data, len, arg ) in
+			SSL_CTX_set_next_protos_advertised_cb(.make(optional: context), { ( ssl, data, len, arg ) in
 				
 				//E.g. data: [ 0x02, 0x68, 0x32 ] //2, 'h', '2'
 				var availBytes = [UInt8]()
@@ -962,7 +996,7 @@ public class SSLService: SSLServiceDelegate {
 			}, nil)
 			
 			// -- Callback for selecting an ALPN protocol based on supported protocols
-			SSL_CTX_set_alpn_select_cb_wrapper(.create(optional: context), { (ssl, out, outlen, _in, _inlen, arg) in
+			SSL_CTX_set_alpn_select_cb_wrapper(.make(optional: context), { (ssl, out, outlen, _in, _inlen, arg) in
 				
 				//_in is a buffer of bytes sent by the client within the ClientHello. The structure
 				//is a byte of length followed by ascii bytes for the name of the protocol.
@@ -1123,38 +1157,75 @@ public class SSLService: SSLServiceDelegate {
 	}
 	
 #if os(Linux)
-	
-	///
-	/// Prepare the connection for either server or client use.
-	///
-	/// - Parameter socket:	The connected `Socket` instance.
-	///
-	/// - Returns: `UnsafeMutablePointer` to the SSL connection.
-	///
-	private func prepareConnection(socket: Socket) throws -> OpaquePointer {
-	
-		// Make sure our context is valid...
+
+        #if swift(>=4.2)
+
+            ///
+            /// Prepare the connection for either server or client use.
+            ///
+	    /// - Parameter socket:	The connected `Socket` instance.
+	    ///
+	    /// - Returns: `OpaquePointer` to the SSL connection.
+	    ///
+	    private func prepareConnection(socket: Socket) throws -> OpaquePointer {
+
+	        // Make sure our context is valid...
 		guard let context = self.context else {
 	
 			let reason = "ERROR: Unable to access SSL context."
 			throw SSLError.fail(Int(EFAULT), reason)
 		}
-	
+
 		// Now create the connection...
-		self.cSSL = .init(SSL_new(.create(optional: context)))
-	
+		self.cSSL = .init(SSL_new(.make(optional: context)))
+
 		guard let sslConnect = self.cSSL else {
-	
+
 			let reason = "ERROR: Unable to create SSL connection."
 			throw SSLError.fail(Int(EFAULT), reason)
 		}
-	
+
 		// Set the socket file descriptor...
-		SSL_set_fd(.create(optional: sslConnect), socket.socketfd)
-	
+		SSL_set_fd(.make(optional: sslConnect), socket.socketfd)
+
 		return sslConnect
-	}
-	
+	    }
+
+        #else
+
+            ///
+            /// Prepare the connection for either server or client use.
+	    ///
+	    /// - Parameter socket:	The connected `Socket` instance.
+	    ///
+	    /// - Returns: `UnsafeMutablePointer` to the SSL connection.
+	    ///
+	    private func prepareConnection(socket: Socket) throws -> UnsafeMutablePointer<SSL> {
+
+		// Make sure our context is valid...
+		guard let context = self.context else {
+
+			let reason = "ERROR: Unable to access SSL context."
+			throw SSLError.fail(Int(EFAULT), reason)
+		}
+
+		// Now create the connection...
+		self.cSSL = SSL_new(context)
+
+		guard let sslConnect = self.cSSL else {
+
+			let reason = "ERROR: Unable to create SSL connection."
+			throw SSLError.fail(Int(EFAULT), reason)
+		}
+
+		// Set the socket file descriptor...
+		SSL_set_fd(sslConnect, socket.socketfd)
+
+		return sslConnect
+	    }
+
+        #endif
+
 	///
 	/// The function will use the OpenSSL API to negotiate an ALPN protocol with the client.
 	/// This is usually being done in response the a ClientHello message that contains the ALPN extension information.
@@ -1165,9 +1236,9 @@ public class SSLService: SSLServiceDelegate {
 		var alpn: UnsafePointer<UInt8>? = nil
 		var alpnlen: UInt32 = 0
 	
-		SSL_get0_next_proto_negotiated(.create(optional: self.cSSL), &alpn, &alpnlen)
+		SSL_get0_next_proto_negotiated(.make(optional: self.cSSL), &alpn, &alpnlen)
 		if (alpn == nil) {
-			SSL_get0_alpn_selected_wrapper(.create(optional: self.cSSL), &alpn, &alpnlen)
+			SSL_get0_alpn_selected_wrapper(.make(optional: self.cSSL), &alpn, &alpnlen)
 		}
 	
 		if alpn != nil && alpnlen > 0 {
@@ -1248,9 +1319,9 @@ public class SSLService: SSLServiceDelegate {
 					throw SSLError.fail(Int(ECONNABORTED), reason)
 				}
 			
-				if SSL_get_peer_certificate(.create(optional: sslConnect)) != nil {
+				if SSL_get_peer_certificate(.make(optional: sslConnect)) != nil {
 				
-					let rc = SSL_get_verify_result(.create(optional: sslConnect))
+					let rc = SSL_get_verify_result(.make(optional: sslConnect))
 					switch rc {
 					
 					case Int(X509_V_OK):
@@ -1469,55 +1540,4 @@ public class SSLService: SSLServiceDelegate {
 		}
 	}
 	
-#endif
-
-#if os(Linux)
-
-    extension UnsafePointer {
-        init(_ ptr: UnsafePointer<Pointee>) {
-            self = ptr
-        }
-
-        static func create(optional ptr: UnsafePointer<Pointee>?) -> UnsafePointer<Pointee>? {
-            return ptr.map(UnsafePointer<Pointee>.init)
-        }
-
-        static func create(optional ptr: OpaquePointer?) -> UnsafePointer<Pointee>? {
-            return ptr.map(UnsafePointer<Pointee>.init)
-        }
-    }
-
-    extension UnsafeMutablePointer {
-        init(_ ptr: UnsafeMutableRawPointer) {
-            let x = UnsafeMutablePointer<Pointee>(bitPattern: UInt(bitPattern: ptr))!
-            self = x
-        }
-
-        static func create(optional ptr: UnsafeMutablePointer<Pointee>?) -> UnsafeMutablePointer<Pointee>? {
-            return ptr.map(UnsafeMutablePointer<Pointee>.init)
-        }
-
-        static func create(optional ptr: UnsafeMutableRawPointer?) -> UnsafeMutablePointer<Pointee>? {
-            return ptr.map(UnsafeMutablePointer<Pointee>.init)
-        }
-
-        static func create(optional ptr: OpaquePointer?) -> UnsafeMutablePointer<Pointee>? {
-            return ptr.map(UnsafeMutablePointer<Pointee>.init)
-        }
-    }
-
-    extension OpaquePointer {
-        init(_ ptr: OpaquePointer) {
-            self = ptr
-        }
-
-        static func create(optional ptr: OpaquePointer?) -> OpaquePointer? {
-            return ptr.map(OpaquePointer.init)
-        }
-
-        static func create(optional ptr: UnsafeMutableRawPointer?) -> OpaquePointer? {
-            return ptr.map(OpaquePointer.init)
-        }
-    }
-
 #endif
