@@ -28,7 +28,7 @@ var packageDependencies: [Package.Dependency] = [.package(url: "https://github.c
 var targetDependencies: [Target.Dependency] = [.byName(name: "Socket")]
 
 #if os(Linux)
-	
+
 packageDependencies.append(.package(url: "https://github.com/IBM-Swift/OpenSSL.git", from: "2.0.0"))
 targetDependencies.append(.byName(name: "OpenSSL"))
 
