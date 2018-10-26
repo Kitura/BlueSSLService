@@ -23,28 +23,28 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 ### Swift
 
 * Swift Open Source `swift-4.0.0-RELEASE` toolchain (**Minimum REQUIRED for latest release**)
-* Swift Open Source `swift-4.1.2-RELEASE` toolchain (**Recommended**)
-* Swift toolchain included in *Xcode Version 9.4 (9F1027) or higher*.
+* Swift Open Source `swift-4.2-RELEASE` toolchain (**Recommended**)
+* Swift toolchain included in *Xcode Version 10.0 (10A255) or higher*.
 
 ### macOS
 
 * macOS 10.11.6 (*El Capitan*) or higher.
 * Xcode Version 9.0 (9A325) or higher using one of the above toolchains.
-* Xcode Version 9.4 (9F1027) or higher using the included toolchain (*Recommended*).
+* Xcode Version 10.0 (10A255) or higher using the included toolchain (*Recommended*).
 * Secure Transport is provided by macOS.
 
 ### iOS
 
 * iOS 10.0 or higher
 * Xcode Version 9.0 (9A325) or higher using one of the above toolchains.
-* Xcode Version 9.4 (9F1027) or higher using the included toolchain (*Recommended*).
+* Xcode Version 10.0 (10A255) or higher using the included toolchain (*Recommended*).
 * Secure Transport is provided by iOS.
 
 ### Linux
 
 * Ubuntu 16.04 (or 16.10 but only tested on 16.04) and 18.04.
 * One of the Swift Open Source toolchain listed above.
-* OpenSSL 1.0.x is provided by the distribution.  **Note:** 1.0.x, 1.1.x and later releases of OpenSSL are supported.
+* OpenSSL 1.0.x is provided by the distribution.  **Note:** 1.0.x, 1.1.x and later releases of OpenSSL are supported. See **Build** section below for more info.
 * The **libssl-dev** package is required to be installed when building.
 
 ### Other Platforms
@@ -56,11 +56,20 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 
 ## Build
 
+At present there isn't a way to detect the version of OpenSSL installed on a system at *compile time*.  Therefore, you must provide a *command line switch* to tell the compiler what version of OpenSSL you are using.  As a convenience, the default setting is to use *OpenSSL 1.0.x* since that is the most common version included in distributions.  If you are using *OpenSSL 1.1.x*, you need to provide extra parameters to `swift build` command as documented.
+
 To build `SSLService` from the command line:
 
+If using OpenSSL 1.0.x:
 ```
 % cd <path-to-clone>
 % swift build
+```
+
+If using OpenSSL 1.1.x:
+```
+% cd <path-to-clone>
+% swift build -Xswiftc -DSSL11
 ```
 
 ## Using BlueSSLService
