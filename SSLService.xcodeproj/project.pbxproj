@@ -13,6 +13,8 @@
 		8C62D4C41F66DA6900F2B7A7 /* Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0ABD501EE89FCF00B098F1 /* Socket.swift */; };
 		8C62D4C51F66DA6900F2B7A7 /* SocketProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0ABD4F1EE89FCF00B098F1 /* SocketProtocols.swift */; };
 		8C62D4C61F66DA6900F2B7A7 /* SocketUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0ABD511EE89FCF00B098F1 /* SocketUtils.swift */; };
+		8C6EF7FF21833B4B00D74FA1 /* SSLPointerTricks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6EF7FE21833B4B00D74FA1 /* SSLPointerTricks.swift */; };
+		8C6EF80021833B4B00D74FA1 /* SSLPointerTricks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6EF7FE21833B4B00D74FA1 /* SSLPointerTricks.swift */; };
 		_LinkFileRef_Socket_via_SSLService /* libSocket.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = "_____Product_Socket" /* libSocket.dylib */; };
 		__src_cc_ref_Sources/SSLService.swift /* SSLService.swift in Sources */ = {isa = PBXBuildFile; fileRef = __PBXFileRef_Sources/SSLService.swift /* SSLService.swift */; };
 /* End PBXBuildFile section */
@@ -43,6 +45,7 @@
 		8C1160961FC4805500CC4136 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8C4223041CF7444C0047BDC3 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		8C4223051CF7444C0047BDC3 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		8C6EF7FE21833B4B00D74FA1 /* SSLPointerTricks.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SSLPointerTricks.swift; path = Sources/SSLService/SSLPointerTricks.swift; sourceTree = "<group>"; };
 		8C9896431ED8A3E800AA1670 /* BlueSSLService.podspec */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = BlueSSLService.podspec; sourceTree = "<group>"; };
 		__PBXFileRef_Package.swift /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		__PBXFileRef_SSLService.xcodeproj/Configs/Project.xcconfig /* Project.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Project.xcconfig; path = SSLService.xcodeproj/Configs/Project.xcconfig; sourceTree = "<group>"; };
@@ -149,6 +152,7 @@
 		"_____Sources_" /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				8C6EF7FE21833B4B00D74FA1 /* SSLPointerTricks.swift */,
 				__PBXFileRef_Sources/SSLService.swift /* SSLService.swift */,
 			);
 			name = Sources;
@@ -292,6 +296,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8C6EF80021833B4B00D74FA1 /* SSLPointerTricks.swift in Sources */,
 				8C11609D1FC4818E00CC4136 /* SSLService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -300,6 +305,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
+				8C6EF7FF21833B4B00D74FA1 /* SSLPointerTricks.swift in Sources */,
 				__src_cc_ref_Sources/SSLService.swift /* SSLService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
