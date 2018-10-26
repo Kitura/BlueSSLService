@@ -313,7 +313,7 @@ public class SSLService: SSLServiceDelegate {
 	
 	#if os(Linux)
 
-                #if swift(>=4.2)
+		#if swift(>=4.2)
 
 		    /// SSL Connection
 		    public private(set) var cSSL: OpaquePointer? = nil
@@ -325,31 +325,33 @@ public class SSLService: SSLServiceDelegate {
 		    /// SSL Context
 		    public private(set) var context: OpaquePointer? = nil
 
-                #else
+		#else
 
-                    /// SSL Connection
-                    public private(set) var cSSL: UnsafeMutablePointer<SSL>? = nil
+			/// SSL Connection
+            public private(set) var cSSL: UnsafeMutablePointer<SSL>? = nil
 
-                    /// SSL Method
-                    /// **Note:** We use `SSLv23` which causes negotiation of the highest available SSL/TLS version.
-                    public private(set) var method: UnsafePointer<SSL_METHOD>? = nil
+            /// SSL Method
+            /// **Note:** We use `SSLv23` which causes negotiation of the highest available SSL/TLS version.
+            public private(set) var method: UnsafePointer<SSL_METHOD>? = nil
 
-                    /// SSL Context
-                    public private(set) var context: UnsafeMutablePointer<SSL_CTX>? = nil
+            /// SSL Context
+            public private(set) var context: UnsafeMutablePointer<SSL_CTX>? = nil
 
-                #endif
+		#endif
 
 		// MARK: ALPN
 		
 		/// List of supported ALPN protocols
 		public func addSupportedAlpnProtocol(proto: String) {
+			
 		    if SSLService.availableAlpnProtocols.contains(proto) {
 			return
 		    }
 		    SSLService.availableAlpnProtocols.append(proto)
-                }
+		}
 
-                private static var availableAlpnProtocols = [String]()
+		/// Array of available ALPN protocols
+        private static var availableAlpnProtocols = [String]()
 
 		/// The negotiated ALPN protocol, if any
 		public private(set) var negotiatedAlpnProtocol: String?
@@ -418,37 +420,37 @@ public class SSLService: SSLServiceDelegate {
 			// 	- We only do this once...
 			if !SSLService.initialized {
 
-                                #if swift(>=4.2)
+				#if swift(>=4.2)
 
-                                    OpenSSL_SSL_init()
+					OpenSSL_SSL_init()
 
-                                #else
+				#else
 
-                                    SSL_library_init()
+                    SSL_library_init()
 				    SSL_load_error_strings()
 				    OPENSSL_config(nil)
 				    OPENSSL_add_all_algorithms_conf()
 
-                                #endif
+                #endif
 
 				SSLService.initialized = true
 			}
 
 			// Server or client specific method determination...
 			if isServer {
-                                #if swift(>=4.2)
+				#if swift(>=4.2)
 				    self.method = .init(OpenSSL_server_method())
-                                #else
-                                    self.method = SSLv23_server_method()
-                                #endif
+                #else
+                    self.method = SSLv23_server_method()
+                #endif
 
 			} else {
 				
-                                #if swift(>=4.2)
+                #if swift(>=4.2)
 				    self.method = .init(OpenSSL_client_method())
-                                #else
-                                   self.method = SSLv23_client_method()
-                                #endif
+                #else
+                    self.method = SSLv23_client_method()
+                #endif
 			}
 			
 		#endif
@@ -873,11 +875,11 @@ public class SSLService: SSLServiceDelegate {
 			
 			// Handle the stuff common to both client and server...
 			//	- Auto retry...
-                        #if swift(>=4.2)
-                            OpenSSL_SSL_CTX_set_mode(.make(optional: context), Int(SSL_MODE_AUTO_RETRY))
-                        #else
-                            SSL_CTX_ctrl(context, SSL_CTRL_MODE, SSL_MODE_AUTO_RETRY, nil)
-                        #endif
+			#if swift(>=4.2)
+            	OpenSSL_SSL_CTX_set_mode(.make(optional: context), Int(SSL_MODE_AUTO_RETRY))
+            #else
+            	SSL_CTX_ctrl(context, SSL_CTRL_MODE, SSL_MODE_AUTO_RETRY, nil)
+            #endif
 
 			//	- User selected cipher list...
 			SSL_CTX_set_cipher_list(.make(optional: context), self.configuration.cipherSuite)
@@ -894,11 +896,11 @@ public class SSLService: SSLServiceDelegate {
 			// Then handle the client/server specific stuff...
 			if !self.isServer {
 
-                                #if swift(>=4.2)
-                                    OpenSSL_SSL_CTX_set_options(.make(optional: context))
-                                #else
-                                    SSL_CTX_ctrl(context, SSL_CTRL_OPTIONS, CLong(SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION), nil)
-                                #endif
+				#if swift(>=4.2)
+					OpenSSL_SSL_CTX_set_options(.make(optional: context))
+				#else
+					SSL_CTX_ctrl(context, SSL_CTRL_OPTIONS, CLong(SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION), nil)
+				#endif
 			}
 
 			// Now configure the rest...
@@ -974,8 +976,8 @@ public class SSLService: SSLServiceDelegate {
 				}
 			}
 			
-			// - Finally, setup ALPN/NPN callback functions
-			// -- NPN advertised protocols to be sent in ServerHello if requested
+			// - Finally, setup ALPN/NPN callback functions...
+			// -- NPN advertised protocols to be sent in ServerHello if requested...
 			SSL_CTX_set_next_protos_advertised_cb(.make(optional: context), { ( ssl, data, len, arg ) in
 				
 				//E.g. data: [ 0x02, 0x68, 0x32 ] //2, 'h', '2'
@@ -988,6 +990,7 @@ public class SSLService: SSLServiceDelegate {
 					let protoBytes: [UInt8] = Array(proto.utf8)
 					availBytes.append(contentsOf: protoBytes)
 				}
+				
 				data?.initialize(to: availBytes)
 				len?.pointee = UInt32(availBytes.count)
 				
@@ -1158,11 +1161,11 @@ public class SSLService: SSLServiceDelegate {
 	
 #if os(Linux)
 
-        #if swift(>=4.2)
+	#if swift(>=4.2)
 
-            ///
-            /// Prepare the connection for either server or client use.
-            ///
+		///
+		/// Prepare the connection for either server or client use.
+		///
 	    /// - Parameter socket:	The connected `Socket` instance.
 	    ///
 	    /// - Returns: `OpaquePointer` to the SSL connection.
@@ -1191,10 +1194,10 @@ public class SSLService: SSLServiceDelegate {
 		return sslConnect
 	    }
 
-        #else
+	#else
 
-            ///
-            /// Prepare the connection for either server or client use.
+		///
+		/// Prepare the connection for either server or client use.
 	    ///
 	    /// - Parameter socket:	The connected `Socket` instance.
 	    ///
@@ -1224,7 +1227,7 @@ public class SSLService: SSLServiceDelegate {
 		return sslConnect
 	    }
 
-        #endif
+	#endif
 
 	///
 	/// The function will use the OpenSSL API to negotiate an ALPN protocol with the client.
@@ -1405,7 +1408,9 @@ public class SSLService: SSLServiceDelegate {
 				if let errorFunc = ERR_func_error_string(UInt(errorCode)) {
 					errorString = String(validatingUTF8: errorFunc)! + ":" + errorString
 				}
+				
 			} else {
+				
 				errorString = "Could not determine error reason."
 			}
 			
