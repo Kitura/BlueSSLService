@@ -42,6 +42,8 @@
 //
 // Hopefully, in time, these extensions can be removed.
 
+#if swift(>=4.2)
+
 extension UnsafePointer {
     init(_ ptr: UnsafePointer<Pointee>) {
         self = ptr
@@ -98,3 +100,5 @@ extension OpaquePointer {
         return ptr.map(OpaquePointer.init)
     }
 }
+
+#endif
