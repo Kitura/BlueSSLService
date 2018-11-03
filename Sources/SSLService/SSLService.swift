@@ -978,7 +978,7 @@ public class SSLService: SSLServiceDelegate {
 			
 			// - Finally, setup ALPN/NPN callback functions...
 			// -- NPN advertised protocols to be sent in ServerHello if requested...
-			SSL_CTX_set_next_protos_advertised_cb(.make(optional: context), { ( ssl, data, len, arg ) in
+			SSL_CTX_set_next_protos_advertised_cb(.make(optional: context), { ( _, data, len, _ ) in
 				
 				//E.g. data: [ 0x02, 0x68, 0x32 ] //2, 'h', '2'
 				var availBytes = [UInt8]()
@@ -999,7 +999,7 @@ public class SSLService: SSLServiceDelegate {
 			}, nil)
 			
 			// -- Callback for selecting an ALPN protocol based on supported protocols
-			SSL_CTX_set_alpn_select_cb_wrapper(.make(optional: context), { (ssl, out, outlen, _in, _inlen, arg) in
+			SSL_CTX_set_alpn_select_cb_wrapper(.make(optional: context), { (_, out, outlen, _in, _inlen, _) in
 				
 				//_in is a buffer of bytes sent by the client within the ClientHello. The structure
 				//is a byte of length followed by ascii bytes for the name of the protocol.
@@ -1240,7 +1240,7 @@ public class SSLService: SSLServiceDelegate {
 		var alpnlen: UInt32 = 0
 	
 		SSL_get0_next_proto_negotiated(.make(optional: self.cSSL), &alpn, &alpnlen)
-		if (alpn == nil) {
+		if alpn == nil {
 			SSL_get0_alpn_selected_wrapper(.make(optional: self.cSSL), &alpn, &alpnlen)
 		}
 	
