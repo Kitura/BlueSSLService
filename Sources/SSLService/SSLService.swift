@@ -313,7 +313,7 @@ public class SSLService: SSLServiceDelegate {
 	
 	#if os(Linux)
 
-		#if swift(>=4.2) && SSL11
+		#if swift(>=4.2)
 
 		    /// SSL Connection
 		    public private(set) var cSSL: OpaquePointer? = nil
@@ -420,7 +420,7 @@ public class SSLService: SSLServiceDelegate {
 			// 	- We only do this once...
 			if !SSLService.initialized {
 
-				#if swift(>=4.2) && SSL11
+				#if swift(>=4.2)
 
 					OpenSSL_SSL_init()
 
@@ -438,7 +438,7 @@ public class SSLService: SSLServiceDelegate {
 
 			// Server or client specific method determination...
 			if isServer {
-				#if swift(>=4.2) && SSL11
+				#if swift(>=4.2)
 				    self.method = .init(OpenSSL_server_method())
                 #else
                     self.method = SSLv23_server_method()
@@ -446,7 +446,7 @@ public class SSLService: SSLServiceDelegate {
 
 			} else {
 				
-                #if swift(>=4.2) && SSL11
+                #if swift(>=4.2)
 				    self.method = .init(OpenSSL_client_method())
                 #else
                     self.method = SSLv23_client_method()
@@ -875,7 +875,7 @@ public class SSLService: SSLServiceDelegate {
 			
 			// Handle the stuff common to both client and server...
 			//	- Auto retry...
-			#if swift(>=4.2) && SSL11
+			#if swift(>=4.2)
             	OpenSSL_SSL_CTX_set_mode(.make(optional: context), Int(SSL_MODE_AUTO_RETRY))
             #else
             	SSL_CTX_ctrl(context, SSL_CTRL_MODE, SSL_MODE_AUTO_RETRY, nil)
@@ -896,7 +896,7 @@ public class SSLService: SSLServiceDelegate {
 			// Then handle the client/server specific stuff...
 			if !self.isServer {
 
-				#if swift(>=4.2) && SSL11
+				#if swift(>=4.2)
 					OpenSSL_SSL_CTX_set_options(.make(optional: context))
 				#else
 					SSL_CTX_ctrl(context, SSL_CTRL_OPTIONS, CLong(SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION), nil)
@@ -1161,7 +1161,7 @@ public class SSLService: SSLServiceDelegate {
 	
 #if os(Linux)
 
-	#if swift(>=4.2) && SSL11
+	#if swift(>=4.2)
 
 		///
 		/// Prepare the connection for either server or client use.
