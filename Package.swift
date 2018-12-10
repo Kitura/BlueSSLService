@@ -56,8 +56,13 @@ let package = Package(
         .target(
             name: "SSLService",
             dependencies: targetDependencies,
-            exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]),
-        ]
+            exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]
+		),
+		.testTarget(
+			name: "SSLServiceTests",
+			dependencies: ["SSLService"]
+		)
+	]
 )
 
 #else
