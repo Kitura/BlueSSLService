@@ -69,7 +69,7 @@ public class SSLService: SSLServiceDelegate {
 			errSecAuthFailed    	 : "errSecAuthFailed",
 			errSSLClosedGraceful	 : "errSSLClosedGraceful",
 			errSSLXCertChainInvalid	 : "errSSLXCertChainInvalid",
-			errSSLPeerAuthCompleted: "errSSLPeerAuthCompleted"
+			errSSLPeerAuthCompleted	 : "errSSLPeerAuthCompleted"
 		]
 	
 	#endif
@@ -78,6 +78,13 @@ public class SSLService: SSLServiceDelegate {
 	
 	#if os(Linux)
 		typealias OSStatus 								= Int32
+	#endif
+	
+	// MARK: Apple Secure Transport Trust
+	
+	#if !os(Linux)
+		/// SecTrust that is copied into the context of an Apple client during the handshake with the server.
+		var trust: SecTrust? = nil
 	#endif
 	
 	// MARK: Helpers
@@ -502,7 +509,7 @@ public class SSLService: SSLServiceDelegate {
             #else
                 self.socketPtr.deallocate(capacity: 1)
             #endif
-			
+		
 		#endif
 	}
 	
@@ -1288,10 +1295,18 @@ public class SSLService: SSLServiceDelegate {
 		repeat {
 			
 			status = SSLHandshake(sslContext)
+			if status == errSSLPeerAuthCompleted && isServer == false && configuration.clientAllowsSelfSignedCertificates == true {
+				
+				// Copy the trust into the context...
+				SSLCopyPeerTrust(sslContext, &self.trust)
+				
+				// Continue the handshake...
+				status = errSSLWouldBlock
+			}
 			
 		} while status == errSSLWouldBlock
 		
-		if status != errSecSuccess && status != errSSLPeerAuthCompleted {
+		if status != errSecSuccess {
 			
 			try self.throwLastError(source: "SSLHandshake", err: status)
 		}
