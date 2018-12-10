@@ -56,7 +56,7 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocke
 
 ## Build
 
-**Note:** If buiding using **OpenSSL 1.1.x**, the **4.2** release of Swift is **required**.
+**Note:** If building using **OpenSSL 1.1.x**, the **4.2** release of Swift is **required**.
 
 To build `SSLService` from the command line:
 
