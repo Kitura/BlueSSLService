@@ -268,24 +268,24 @@ public class SSLService: SSLServiceDelegate {
 		}
 
 		#if os(Linux)
-		///
-		/// Initialize a configuration using a `PEM formatted certificate in String form`.
-		///
-		/// - Parameters:
-		///		- certificateString:		PEM formatted certificate in String form.
-		///		- selfSigned:				True if certs are `self-signed`, false otherwise. Defaults to true.
-		///		- cipherSuite:				Optional String containing the cipher suite to use.
-		///
-		///	- Returns:	New Configuration instance.
-		///
-		public init(withPEMCertificateString certificateString: String, usingSelfSignedCerts selfSigned: Bool = true, cipherSuite: String? = nil) {
-			
-			self.certificateString = certificateString
-			self.certsAreSelfSigned = selfSigned
-			if cipherSuite != nil {
-				self.cipherSuite = cipherSuite!
+			///
+			/// Initialize a configuration using a `PEM formatted certificate in String form`.
+			///
+			/// - Parameters:
+			///		- certificateString:		PEM formatted certificate in String form.
+			///		- selfSigned:				True if certs are `self-signed`, false otherwise. Defaults to true.
+			///		- cipherSuite:				Optional String containing the cipher suite to use.
+			///
+			///	- Returns:	New Configuration instance.
+			///
+			public init(withPEMCertificateString certificateString: String, usingSelfSignedCerts selfSigned: Bool = true, cipherSuite: String? = nil) {
+				
+				self.certificateString = certificateString
+				self.certsAreSelfSigned = selfSigned
+				if cipherSuite != nil {
+					self.cipherSuite = cipherSuite!
+				}
 			}
-		}
 		#endif
 	}
 		
@@ -320,31 +320,16 @@ public class SSLService: SSLServiceDelegate {
 	
 	#if os(Linux)
 
-		#if swift(>=4.2)
+		/// SSL Connection
+		public private(set) var cSSL: OpaquePointer? = nil
 
-		    /// SSL Connection
-		    public private(set) var cSSL: OpaquePointer? = nil
+		/// SSL Method
+		/// **Note:** We use `SSLv23` which causes negotiation of the highest available SSL/TLS version.
+		public private(set) var method: OpaquePointer? = nil
 
-		    /// SSL Method
-		    /// **Note:** We use `SSLv23` which causes negotiation of the highest available SSL/TLS version.
-		    public private(set) var method: OpaquePointer? = nil
+		/// SSL Context
+		public private(set) var context: OpaquePointer? = nil
 
-		    /// SSL Context
-		    public private(set) var context: OpaquePointer? = nil
-
-		#else
-
-			/// SSL Connection
-            public private(set) var cSSL: UnsafeMutablePointer<SSL>? = nil
-
-            /// SSL Method
-            /// **Note:** We use `SSLv23` which causes negotiation of the highest available SSL/TLS version.
-            public private(set) var method: UnsafePointer<SSL_METHOD>? = nil
-
-            /// SSL Context
-            public private(set) var context: UnsafeMutablePointer<SSL_CTX>? = nil
-
-		#endif
 
 		// MARK: ALPN
 		
@@ -427,37 +412,18 @@ public class SSLService: SSLServiceDelegate {
 			// 	- We only do this once...
 			if !SSLService.initialized {
 
-				#if swift(>=4.2)
-
-					OpenSSL_SSL_init()
-
-				#else
-
-                    SSL_library_init()
-				    SSL_load_error_strings()
-				    OPENSSL_config(nil)
-				    OPENSSL_add_all_algorithms_conf()
-
-                #endif
-
+				OpenSSL_SSL_init()
 				SSLService.initialized = true
 			}
 
 			// Server or client specific method determination...
 			if isServer {
-				#if swift(>=4.2)
-				    self.method = .init(OpenSSL_server_method())
-                #else
-                    self.method = SSLv23_server_method()
-                #endif
+				
+			    self.method = .init(OpenSSL_server_method())
 
 			} else {
 				
-                #if swift(>=4.2)
-				    self.method = .init(OpenSSL_client_method())
-                #else
-                    self.method = SSLv23_client_method()
-                #endif
+			    self.method = .init(OpenSSL_client_method())
 			}
 			
 		#endif
@@ -882,11 +848,7 @@ public class SSLService: SSLServiceDelegate {
 			
 			// Handle the stuff common to both client and server...
 			//	- Auto retry...
-			#if swift(>=4.2)
-            	OpenSSL_SSL_CTX_set_mode(.make(optional: context), Int(SSL_MODE_AUTO_RETRY))
-            #else
-            	SSL_CTX_ctrl(context, SSL_CTRL_MODE, SSL_MODE_AUTO_RETRY, nil)
-            #endif
+			OpenSSL_SSL_CTX_set_mode(.make(optional: context), Int(SSL_MODE_AUTO_RETRY))
 
 			//	- User selected cipher list...
 			SSL_CTX_set_cipher_list(.make(optional: context), self.configuration.cipherSuite)
@@ -903,11 +865,7 @@ public class SSLService: SSLServiceDelegate {
 			// Then handle the client/server specific stuff...
 			if !self.isServer {
 
-				#if swift(>=4.2)
-					OpenSSL_SSL_CTX_set_options(.make(optional: context))
-				#else
-					SSL_CTX_ctrl(context, SSL_CTRL_OPTIONS, CLong(SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION), nil)
-				#endif
+				OpenSSL_SSL_CTX_set_options(.make(optional: context))
 			}
 
 			// Now configure the rest...
@@ -1168,78 +1126,43 @@ public class SSLService: SSLServiceDelegate {
 	
 #if os(Linux)
 
-	#if swift(>=4.2)
-
-		///
-		/// Prepare the connection for either server or client use.
-		///
-	    /// - Parameter socket:	The connected `Socket` instance.
-	    ///
-	    /// - Returns: `OpaquePointer` to the SSL connection.
-	    ///
-	    private func prepareConnection(socket: Socket) throws -> OpaquePointer {
-
-	        // Make sure our context is valid...
-		guard let context = self.context else {
-	
-			let reason = "ERROR: Unable to access SSL context."
-			throw SSLError.fail(Int(EFAULT), reason)
-		}
-
-		// Now create the connection...
-		self.cSSL = .init(SSL_new(.make(optional: context)))
-
-		guard let sslConnect = self.cSSL else {
-
-			let reason = "ERROR: Unable to create SSL connection."
-			throw SSLError.fail(Int(EFAULT), reason)
-		}
-
-		// Set the socket file descriptor...
-		SSL_set_fd(.make(optional: sslConnect), socket.socketfd)
-
-		return sslConnect
-	    }
-
-	#else
-
-		///
-		/// Prepare the connection for either server or client use.
-	    ///
-	    /// - Parameter socket:	The connected `Socket` instance.
-	    ///
-	    /// - Returns: `UnsafeMutablePointer` to the SSL connection.
-	    ///
-	    private func prepareConnection(socket: Socket) throws -> UnsafeMutablePointer<SSL> {
-
+	///
+	/// Prepare the connection for either server or client use.
+	///
+	/// - Parameter socket:	The connected `Socket` instance.
+	///
+	/// - Returns: `OpaquePointer` to the SSL connection.
+	///
+	private func prepareConnection(socket: Socket) throws -> OpaquePointer {
+		
 		// Make sure our context is valid...
 		guard let context = self.context else {
-
+			
 			let reason = "ERROR: Unable to access SSL context."
 			throw SSLError.fail(Int(EFAULT), reason)
 		}
-
+		
 		// Now create the connection...
-		self.cSSL = SSL_new(context)
-
+		self.cSSL = .init(SSL_new(.make(optional: context)))
+		
 		guard let sslConnect = self.cSSL else {
-
+			
 			let reason = "ERROR: Unable to create SSL connection."
 			throw SSLError.fail(Int(EFAULT), reason)
 		}
-
+		
 		// Set the socket file descriptor...
-		SSL_set_fd(sslConnect, socket.socketfd)
-
+		SSL_set_fd(.make(optional: sslConnect), socket.socketfd)
+		
 		return sslConnect
-	    }
-
-	#endif
-
+	}
+	
 	///
 	/// The function will use the OpenSSL API to negotiate an ALPN protocol with the client.
 	/// This is usually being done in response the a ClientHello message that contains the ALPN extension information.
 	/// If an ALPN protocol has been chose, it will be set in the 'negotiatedAlpnProtocol' field.
+	///
+	///	- Returns: Nothing
 	///
 	private func negotiateAlpnProtocols() {
 	
