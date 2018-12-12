@@ -74,6 +74,8 @@
 		8C1160961FC4805500CC4136 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8C4223041CF7444C0047BDC3 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		8C4223051CF7444C0047BDC3 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		8C6E707321C1A57E00216EC2 /* SSLService.p12 */ = {isa = PBXFileReference; lastKnownFileType = file; path = SSLService.p12; sourceTree = "<group>"; };
+		8C6E707421C1A57E00216EC2 /* before_tests.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = before_tests.sh; sourceTree = "<group>"; };
 		8C6EF7FE21833B4B00D74FA1 /* SSLPointerTricks.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SSLPointerTricks.swift; path = Sources/SSLService/SSLPointerTricks.swift; sourceTree = "<group>"; };
 		8C9896431ED8A3E800AA1670 /* BlueSSLService.podspec */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = BlueSSLService.podspec; sourceTree = "<group>"; };
 		__PBXFileRef_Package.swift /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
@@ -175,6 +177,15 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		8C6E707221C1A57E00216EC2 /* osx */ = {
+			isa = PBXGroup;
+			children = (
+				8C6E707321C1A57E00216EC2 /* SSLService.p12 */,
+				8C6E707421C1A57E00216EC2 /* before_tests.sh */,
+			);
+			path = osx;
+			sourceTree = "<group>";
+		};
 		Dependencies_ /* Dependencies */ = {
 			isa = PBXGroup;
 			children = (
@@ -190,13 +201,14 @@
 				8C4223041CF7444C0047BDC3 /* LICENSE */,
 				__PBXFileRef_Package.swift /* Package.swift */,
 				8C4223051CF7444C0047BDC3 /* README.md */,
+				8C6E707221C1A57E00216EC2 /* osx */,
 				"_____Sources_" /* Sources */,
 				8C025FC721BEC6C4004FE864 /* Tests */,
+				8C1160941FC4805500CC4136 /* SSLService-Framework */,
 				"_____Configs_" /* Configs */,
 				Dependencies_ /* Dependencies */,
-				8C1160941FC4805500CC4136 /* SSLService-Framework */,
-				"____Products_" /* Products */,
 				8C11609E1FC4825500CC4136 /* Frameworks */,
+				"____Products_" /* Products */,
 			);
 			sourceTree = "<group>";
 		};
