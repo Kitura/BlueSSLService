@@ -74,8 +74,9 @@
 		8C1160961FC4805500CC4136 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8C4223041CF7444C0047BDC3 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		8C4223051CF7444C0047BDC3 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		8C6E707321C1A57E00216EC2 /* SSLService.p12 */ = {isa = PBXFileReference; lastKnownFileType = file; path = SSLService.p12; sourceTree = "<group>"; };
+		8C6E707321C1A57E00216EC2 /* SSLServiceCert1.p12 */ = {isa = PBXFileReference; lastKnownFileType = file; path = SSLServiceCert1.p12; sourceTree = "<group>"; };
 		8C6E707421C1A57E00216EC2 /* before_tests.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = before_tests.sh; sourceTree = "<group>"; };
+		8C6E707521C1B1DD00216EC2 /* SSLServiceCert2.p12 */ = {isa = PBXFileReference; lastKnownFileType = file; path = SSLServiceCert2.p12; sourceTree = "<group>"; };
 		8C6EF7FE21833B4B00D74FA1 /* SSLPointerTricks.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SSLPointerTricks.swift; path = Sources/SSLService/SSLPointerTricks.swift; sourceTree = "<group>"; };
 		8C9896431ED8A3E800AA1670 /* BlueSSLService.podspec */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = BlueSSLService.podspec; sourceTree = "<group>"; };
 		__PBXFileRef_Package.swift /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
@@ -180,8 +181,9 @@
 		8C6E707221C1A57E00216EC2 /* osx */ = {
 			isa = PBXGroup;
 			children = (
-				8C6E707321C1A57E00216EC2 /* SSLService.p12 */,
 				8C6E707421C1A57E00216EC2 /* before_tests.sh */,
+				8C6E707321C1A57E00216EC2 /* SSLServiceCert1.p12 */,
+				8C6E707521C1B1DD00216EC2 /* SSLServiceCert2.p12 */,
 			);
 			path = osx;
 			sourceTree = "<group>";
