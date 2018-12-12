@@ -121,13 +121,10 @@ class SSLServiceTests: XCTestCase {
 		
 		self.createConfiguration()
 		
-		// TODO: Until I figure out how to insert the private key into the keychain, don't test on macOS...
-		#if os(Linux)
-			let service = try SSLService(usingConfiguration: self.configuration!)
-			XCTAssertNotNil(service)
+		let service = try SSLService(usingConfiguration: self.configuration!)
+		XCTAssertNotNil(service)
 		
-			socket.delegate = service
-		#endif
+		socket.delegate = service
 		
 		return socket
 	}
@@ -183,15 +180,10 @@ class SSLServiceTests: XCTestCase {
 			
 			self.createConfiguration()
 			
-			// TODO: Until I figure out how to insert the private key into the keychain, don't test on macOS...
-			#if os(Linux)
-			
-				let service = try SSLService(usingConfiguration: self.configuration!)
-				XCTAssertNotNil(service)
+			let service = try SSLService(usingConfiguration: self.configuration!)
+			XCTAssertNotNil(service)
 
-				listener.delegate = service
-			
-			#endif
+			listener.delegate = service
 			
 			// Setting up TCP...
 			try listener.listen(on: Int(port), maxBacklogSize: 10)
