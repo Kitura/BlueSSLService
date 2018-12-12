@@ -185,6 +185,9 @@ public class SSLService: SSLServiceDelegate {
 		///
 		///	- Returns:	New Configuration instance.
 		///
+		@available(macOS, unavailable, message: "This API not supported on Apple platforms.")
+		@available(iOS, unavailable, message: "This API not supported on Apple platforms.")
+		@available(tvOS, unavailable, message: "This API not supported on Apple platforms.")
 		public init(withCipherSuite cipherSuite: String? = nil, clientAllowsSelfSignedCertificates: Bool = true) {
 			
 			self.noBackingCertificates = true
@@ -206,6 +209,9 @@ public class SSLService: SSLServiceDelegate {
 		///
 		///	- Returns:	New Configuration instance.
 		///
+		@available(macOS, unavailable, message: "This API not supported on Apple platforms.")
+		@available(iOS, unavailable, message: "This API not supported on Apple platforms.")
+		@available(tvOS, unavailable, message: "This API not supported on Apple platforms.")
 		public init(withCACertificateFilePath caCertificateFilePath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true, cipherSuite: String? = nil) {
 			
 			self.certificateFilePath = certificateFilePath
@@ -231,6 +237,9 @@ public class SSLService: SSLServiceDelegate {
 		///
 		///	- Returns:	New Configuration instance.
 		///
+		@available(macOS, unavailable, message: "This API not supported on Apple platforms.")
+		@available(iOS, unavailable, message: "This API not supported on Apple platforms.")
+		@available(tvOS, unavailable, message: "This API not supported on Apple platforms.")
 		public init(withCACertificateDirectory caCertificateDirPath: String?, usingCertificateFile certificateFilePath: String?, withKeyFile keyFilePath: String? = nil, usingSelfSignedCerts selfSigned: Bool = true, cipherSuite: String? = nil) {
 			
 			self.certificateFilePath = certificateFilePath
