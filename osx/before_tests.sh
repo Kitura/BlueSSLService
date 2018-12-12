@@ -16,8 +16,7 @@ security create-keychain -p SSLService SSLService.keychain && echo "SSLService.k
 security default-keychain -s SSLService.keychain || echo "ERROR: Could not make SSLService.keychain the default keychain."
 
 # Import the private keys into the keychain...
-security import ./osx/SSLServiceCert1.p12 -k SSLService.keychain -t priv -f pkcs12 -P SSLService -A || echo "ERROR: Could not import PKCS12 (cert1) file."
-security import ./osx/SSLServiceCert2.p12 -k SSLService.keychain -t priv -f pkcs12 -P SSLService -A || echo "ERROR: Could not import PKCS12 (cert2) file."
+security import ./osx/SSLServiceCert.p12 -k SSLService.keychain -t priv -f pkcs12 -P kitura -A || echo "ERROR: Could not import PKCS12 (cert2) file."
 
 # Unlock the keychain to allow use by unit tests...
 security unlock-keychain -p password SSLService.keychain && echo "Keychain unlocked, ready to test..." || echo "ERROR: keychain could not be unlocked."
