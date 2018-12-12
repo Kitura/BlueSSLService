@@ -35,7 +35,7 @@ class SSLServiceTests: XCTestCase {
 	let port: Int32 = 1337
 	let host: String = "127.0.0.1"
 	let path: String = "/tmp/server.test.socket"
-	let password = "1234"
+	let password = "kitura"
 	var configuration: SSLService.Configuration? = nil
 	var certPath: URL? = nil
 	var keyPath: URL? = nil
