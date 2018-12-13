@@ -20,3 +20,7 @@ security unlock-keychain -p SSLService SSLService.keychain && echo "Keychain unl
 
 # Import the private keys into the keychain...
 security import ./osx/SSLServiceCert.p12 -k SSLService.keychain -t priv -f pkcs12 -P kitura -A && echo "Import complete. Ready to test..." || echo "ERROR: Could not import PKCS12 file."
+
+# Set the key partition list...
+security set-key-partition-list -S apple-tool:,apple: -s -k SSLService SSLService.keychain
+
