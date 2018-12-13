@@ -57,6 +57,12 @@ class SSLServiceTests: XCTestCase {
 		static let bundle: Bundle? = Bundle(for: SSLServiceTests.self)
 	#endif
 	
+	#if os(Linux)
+		let enableSSL = true
+	#else
+		let enableSSL = false
+	#endif
+	
 	///
 	/// Platform independent utility function to locate test files.
 	///
@@ -119,7 +125,7 @@ class SSLServiceTests: XCTestCase {
 		XCTAssertFalse(socket.isConnected)
 		XCTAssertTrue(socket.isBlocking)
 		
-		#if os(Linux)
+		if enableSSL {
 		
 			self.createConfiguration()
 		
@@ -128,7 +134,7 @@ class SSLServiceTests: XCTestCase {
 		
 			socket.delegate = service
 		
-		#endif
+		}
 		
 		return socket
 	}
@@ -182,7 +188,7 @@ class SSLServiceTests: XCTestCase {
 			
 			var socket: Socket
 			
-			#if os(Linux)
+			if enableSSL {
 			
 				self.createConfiguration()
 			
@@ -191,7 +197,7 @@ class SSLServiceTests: XCTestCase {
 
 				listener.delegate = service
 			
-			#endif
+			}
 			
 			// Setting up TCP...
 			try listener.listen(on: Int(port), maxBacklogSize: 10)
