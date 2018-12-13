@@ -76,6 +76,7 @@
 		8C4223051CF7444C0047BDC3 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		8C6E707421C1A57E00216EC2 /* before_tests.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = before_tests.sh; sourceTree = "<group>"; };
 		8C6E707621C1C5C200216EC2 /* SSLServiceCert.p12 */ = {isa = PBXFileReference; lastKnownFileType = file; path = SSLServiceCert.p12; sourceTree = "<group>"; };
+		8C6E707721C1E48A00216EC2 /* SSLService.keychain-db */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SSLService.keychain-db"; sourceTree = "<group>"; };
 		8C6EF7FE21833B4B00D74FA1 /* SSLPointerTricks.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SSLPointerTricks.swift; path = Sources/SSLService/SSLPointerTricks.swift; sourceTree = "<group>"; };
 		8C9896431ED8A3E800AA1670 /* BlueSSLService.podspec */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = BlueSSLService.podspec; sourceTree = "<group>"; };
 		__PBXFileRef_Package.swift /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
@@ -182,6 +183,7 @@
 			children = (
 				8C6E707421C1A57E00216EC2 /* before_tests.sh */,
 				8C6E707621C1C5C200216EC2 /* SSLServiceCert.p12 */,
+				8C6E707721C1E48A00216EC2 /* SSLService.keychain-db */,
 			);
 			path = osx;
 			sourceTree = "<group>";
