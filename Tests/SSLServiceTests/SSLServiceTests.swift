@@ -119,12 +119,16 @@ class SSLServiceTests: XCTestCase {
 		XCTAssertFalse(socket.isConnected)
 		XCTAssertTrue(socket.isBlocking)
 		
-		self.createConfiguration()
+		#if os(Linux)
 		
-		let service = try SSLService(usingConfiguration: self.configuration!)
-		XCTAssertNotNil(service)
+			self.createConfiguration()
 		
-		socket.delegate = service
+			let service = try SSLService(usingConfiguration: self.configuration!)
+			XCTAssertNotNil(service)
+		
+			socket.delegate = service
+		
+		#endif
 		
 		return socket
 	}
@@ -178,12 +182,16 @@ class SSLServiceTests: XCTestCase {
 			
 			var socket: Socket
 			
-			self.createConfiguration()
+			#if os(Linux)
 			
-			let service = try SSLService(usingConfiguration: self.configuration!)
-			XCTAssertNotNil(service)
+				self.createConfiguration()
+			
+				let service = try SSLService(usingConfiguration: self.configuration!)
+				XCTAssertNotNil(service)
 
-			listener.delegate = service
+				listener.delegate = service
+			
+			#endif
 			
 			// Setting up TCP...
 			try listener.listen(on: Int(port), maxBacklogSize: 10)
