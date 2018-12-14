@@ -20,3 +20,9 @@ security import ./osx/SSLServiceCert.p12 -k SSLService.keychain -t priv -f pkcs1
 
 # Unlock the keychain to allow use by unit tests...
 security unlock-keychain -p SSLService SSLService.keychain && echo "Keychain unlocked, ready to test..." || echo "ERROR: keychain could not be unlocked."
+
+# Prevent the keychain from relocking before Travis can run the tests.  An hour ought to do it...
+security set-keychain-settings -t 3600 -u SSLService.keychain
+
+# Show the status of the unlock...
+security show-keychain-info SSLService.keychain
