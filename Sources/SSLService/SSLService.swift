@@ -38,7 +38,7 @@ public class SSLService: SSLServiceDelegate {
 	
 	#if os(Linux)
 		/// Flag set to indicate that OpenSSL has been initialized.  This initialization need only be done once per instance.
-		static var initialized: Bool 					= false
+		static var initialized: Bool = false
 	#endif
 	
 	// MARK: Constants
@@ -46,13 +46,13 @@ public class SSLService: SSLServiceDelegate {
 	// MARK: PEM Certificate Markers
 	
 	/// PEM Begin Marker
-	static let PEM_BEGIN_MARKER: String					= "-----BEGIN CERTIFICATE-----"
+	static let PEM_BEGIN_MARKER: String	= "-----BEGIN CERTIFICATE-----"
 	
 	/// PEM End Marker
-	static let PEM_END_MARKER: String					= "-----END CERTIFICATE-----"
+	static let PEM_END_MARKER: String = "-----END CERTIFICATE-----"
 	
 	/// Default verfication depth
-	static let DEFAULT_VERIFY_DEPTH: Int32				= 2
+	static let DEFAULT_VERIFY_DEPTH: Int32 = 2
 	
 	#if !os(Linux)
 	
@@ -77,7 +77,7 @@ public class SSLService: SSLServiceDelegate {
 	// MARK: Typealiases
 	
 	#if os(Linux)
-		typealias OSStatus 								= Int32
+		typealias OSStatus = Int32
 	#endif
 	
 	// MARK: Apple Secure Transport Trust
@@ -159,14 +159,14 @@ public class SSLService: SSLServiceDelegate {
 			// @FIXME: This isn't quite right, needs to be revisited.
 			public var cipherSuite: String = "14,13,2B,2F,2C,30,9E,9F,23,27,09,28,13,24,0A,14,67,33,6B,39,08,12,16,9C,9D,3C,3D,2F,35,0A"
 		
-			/// `True` to use default cipher list, false otherwise.
+			/// `True` to use default cipher list, `false` otherwise.
 			public var useDefaultCiphers: Bool = true
 
 			/// Cached array of previously imported PKCS12.
 			fileprivate var pkcs12Certs: CFArray? = nil
 		#endif
 		
-		/// Password (if needed) typically used for PKCS12 files.
+		/// Password *(if needed)* typically used for PKCS12 files.
 		public var password: String? = nil
 		
 		/// True if no backing certificates provided (Readonly).
@@ -178,10 +178,10 @@ public class SSLService: SSLServiceDelegate {
 		/// Initialize a configuration with no backing certificates.
 		///
 		/// - Parameters:
-		///		- cipherSuite:					Optional String containing the cipher suite to use.
+		///		- cipherSuite:				Optional String containing the cipher suite to use.
 		///		- clientAllowsSelfSignedCertificates:
-		///										`true` to accept self-signed certificates from a server. `false` otherwise.
-		///										**Note:** This parameter is only used when `SSLService` is used with a client socket.
+		///									`true` to accept self-signed certificates from a server. `false` otherwise.
+		///									**Note:** This parameter is only used when `SSLService` is used with a client socket.
 		///
 		///	- Returns:	New Configuration instance.
 		///
@@ -204,7 +204,7 @@ public class SSLService: SSLServiceDelegate {
 		///		- caCertificateFilePath:	Path to the PEM formatted CA certificate file.
 		///		- certificateFilePath:		Path to the PEM formatted certificate file.
 		///		- keyFilePath:				Path to the PEM formatted key file. If nil, `certificateFilePath` will be used.
-		///		- selfSigned:				True if certs are `self-signed`, false otherwise. Defaults to true.
+		///		- selfSigned:				`True` if certs are `self-signed`, `false` otherwise. Defaults to `true`.
 		///		- cipherSuite:				Optional String containing the cipher suite to use.
 		///
 		///	- Returns:	New Configuration instance.
@@ -232,7 +232,7 @@ public class SSLService: SSLServiceDelegate {
 		///		- caCertificateDirPath:		Path to a directory containing CA certificates. *(see note above)*
 		///		- certificateFilePath:		Path to the PEM formatted certificate file. If nil, `certificateFilePath` will be used.
 		///		- keyFilePath:				Path to the PEM formatted key file (optional). If nil, `certificateFilePath` is used.
-		///		- selfSigned:				True if certs are `self-signed`, false otherwise. Defaults to true.
+		///		- selfSigned:				`True` if certs are *self-signed*, `false` otherwise. Defaults to `true`.
 		///		- cipherSuite:				Optional String containing the cipher suite to use.
 		///
 		///	- Returns:	New Configuration instance.
@@ -259,8 +259,8 @@ public class SSLService: SSLServiceDelegate {
 		/// - Parameters:
 		///		- chainFilePath:                        Path to the certificate chain file (optional). *(see note above)*
 		///		- password:                             Password for the chain file (optional).
-		///		- selfSigned:                           True if certs are `self-signed`, false otherwise. Defaults to true.
-        ///     - clientAllowsSelfSignedCertificates:   True if, as a client, connections to self-signed servers are allowed
+		///		- selfSigned:                           `True` if certs are *self-signed*, `false` otherwise. Defaults to `true`.
+        ///     - clientAllowsSelfSignedCertificates:   `True` if, as a client, connections to self-signed servers are allowed
 		///		- cipherSuite:                          Optional String containing the cipher suite to use.
 		///
 		///	- Returns:	New Configuration instance.
@@ -282,7 +282,7 @@ public class SSLService: SSLServiceDelegate {
 			///
 			/// - Parameters:
 			///		- certificateString:		PEM formatted certificate in String form.
-			///		- selfSigned:				True if certs are `self-signed`, false otherwise. Defaults to true.
+			///		- selfSigned:				`True` if certs are *self-signed*, `false` otherwise. Defaults to `true`.
 			///		- cipherSuite:				Optional String containing the cipher suite to use.
 			///
 			///	- Returns:	New Configuration instance.
@@ -321,7 +321,7 @@ public class SSLService: SSLServiceDelegate {
 	/// SSL Configuration (Read only)
 	public private(set) var configuration: Configuration
 	
-	/// True if setup as server, false if setup as client.
+	/// `True` if setup as server, `false` if setup as client.
 	public private(set) var isServer: Bool = true
 
 	/// Read/write dispatcher to serialize these operations...
@@ -409,7 +409,7 @@ public class SSLService: SSLServiceDelegate {
 	///
 	/// Initialize `SSLService`
 	///
-	/// - Parameter asServer:	True for initializing a server, otherwise a client.
+	/// - Parameter asServer:	`True` for initializing a server, otherwise a client.
 	///
 	public func initialize(asServer: Bool) throws {
 		
@@ -640,7 +640,8 @@ public class SSLService: SSLServiceDelegate {
 	///		- buffer:		Buffer pointer.
 	///		- bufSize:		Size of the buffer.
 	///
-	///	- Returns: the number of bytes read. Zero indicates SSL shutdown or in the case of a non-blocking socket, no data available for reading, less than zero indicates error.
+	///	- Returns: 	The number of bytes read. Zero indicates SSL shutdown or in the case of a non-blocking socket, no data available
+	///				for reading, less than zero indicates error.
 	///
 	public func recv(buffer: UnsafeMutableRawPointer, bufSize: Int) throws -> Int {
 		
