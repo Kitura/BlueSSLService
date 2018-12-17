@@ -177,6 +177,8 @@ public class SSLService: SSLServiceDelegate {
 		///
 		/// Initialize a configuration with no backing certificates.
 		///
+		///	- Warning:	**This API is not supported when running on Apple platforms**.
+		///
 		/// - Parameters:
 		///		- cipherSuite:				Optional String containing the cipher suite to use.
 		///		- clientAllowsSelfSignedCertificates:
@@ -196,6 +198,8 @@ public class SSLService: SSLServiceDelegate {
 		
 		///
 		/// Initialize a configuration using a `CA Certificate` file.
+		///
+		///	- Warning:	**This API is not supported when running on Apple platforms**.
 		///
 		/// - Parameters:
 		///		- caCertificateFilePath:	Path to the PEM formatted CA certificate file.
@@ -219,6 +223,8 @@ public class SSLService: SSLServiceDelegate {
 		
 		///
 		/// Initialize a configuration using a `CA Certificate` directory.
+		///
+		///	- Warning:	**This API is not supported when running on Apple platforms**.
 		///
 		///	*Note:* `caCertificateDirPath` - All certificates in the specified directory **must** be hashed using the `OpenSSL Certificate Tool`.
 		///
