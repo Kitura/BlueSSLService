@@ -54,6 +54,8 @@ public class SSLService: SSLServiceDelegate {
 	/// Default verfication depth
 	static let DEFAULT_VERIFY_DEPTH: Int32 = 2
 	
+        static let sslInitQueue = DispatchQueue(label: "sslInitQueue")
+
 	#if !os(Linux)
 	
 		/// String representation of Secure Transport Errors
@@ -1032,7 +1034,7 @@ public class SSLService: SSLServiceDelegate {
 			SSLSetIOFuncs(sslContext, sslReadCallback, sslWriteCallback)
 			
 			//  - Process the PKCS12 file (if any)...
-			var status: OSStatus
+			var status: OSStatus = 0
 			if configuration.noBackingCertificates == false {
 				
 				// If we haven't processed the PKCS12 yet, process it now...
@@ -1064,10 +1066,11 @@ public class SSLService: SSLServiceDelegate {
 					var items: CFArray? = nil
 					
 					// 	- Import the PKCS12 file...
-					status = SecPKCS12Import(p12Data, options, &items)
-					if status != errSecSuccess {
-						
+					try SSLService.sslInitQueue.sync {
+					    status = SecPKCS12Import(p12Data, options, &items)
+					    if status != errSecSuccess {
 						try self.throwLastError(source: "SecPKCS12Import", err: status)
+					    }
 					}
 					
 					// 	- Now extract what we need...
