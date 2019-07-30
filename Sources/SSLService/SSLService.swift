@@ -1092,7 +1092,7 @@ public class SSLService: SSLServiceDelegate {
 					
 					//	-- Cert chain...
 					var certs = [secIdentity]
-					var ccerts: Array<SecCertificate> = (dictionary as AnyObject).value(forKey: kSecImportItemCertChain as String) as! Array<SecCertificate>
+					let ccerts: Array<SecCertificate> = (dictionary as AnyObject).value(forKey: kSecImportItemCertChain as String) as! Array<SecCertificate>
 					for i in 1 ..< ccerts.count {
 						
 						certs += [ccerts[i] as AnyObject]
