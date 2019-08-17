@@ -173,6 +173,10 @@ public class SSLService: SSLServiceDelegate {
 		
 		/// True if no backing certificates provided (Readonly).
 		public private(set) var noBackingCertificates = false
+        
+        /// For clients that allow `self-signed` server certificates, verify against one provided locally
+        public private(set) var embeddedServerCertPath : URL? = nil
+        
 		
 		// MARK: Lifecycle
 		
@@ -186,16 +190,21 @@ public class SSLService: SSLServiceDelegate {
 		///		- clientAllowsSelfSignedCertificates:
 		///									`true` to accept self-signed certificates from a server. `false` otherwise.
 		///									**Note:** This parameter is only used when `SSLService` is used with a client socket.
+        ///     - embeddedServerCertPath:    when client allows self-signed certificates from a server, verify to server certificate
+        ///                                 against the locally embedded certificate. Pass `nil` to skip the check.
+        ///                                 **Note:** This parameter is only used when `SSLService` is used with a client socket.
+        ///                                 **Note:** This parameter is only available on Apple platforms
 		///
 		///	- Returns:	New Configuration instance.
 		///
-		public init(withCipherSuite cipherSuite: String? = nil, clientAllowsSelfSignedCertificates: Bool = true) {
+        public init(withCipherSuite cipherSuite: String? = nil, clientAllowsSelfSignedCertificates: Bool = true, embeddedServerCertPath : URL? = nil) {
 			
 			self.noBackingCertificates = true
 			self.clientAllowsSelfSignedCertificates = clientAllowsSelfSignedCertificates
 			if cipherSuite != nil {
 				self.cipherSuite = cipherSuite!
 			}
+            self.embeddedServerCertPath = embeddedServerCertPath
 		}
 		
 		///
@@ -1232,7 +1241,32 @@ public class SSLService: SSLServiceDelegate {
 				
 				// Copy the trust into the context...
 				SSLCopyPeerTrust(sslContext, &self.trust)
-				
+                
+                // Verify against a local embedded certificate
+                if let trust = self.trust, let path = configuration.embeddedServerCertPath {
+                    
+                    //Load data from file, then set it as the Anchor Certificate
+                    let data = try Data(contentsOf: path)
+                    if let cert = SecCertificateCreateWithData(nil, data as CFData) {
+                        status = SecTrustSetAnchorCertificates(trust, [cert] as CFArray)
+                        if status != errSecSuccess {
+                            try self.throwLastError(source: "SecTrustSetAnchorCertificates", err: status)
+                        }
+                    }
+                    else {
+                        throw SSLError.fail(Int(errSSLBadCert), "Bunded certificate is not a valid DER encoded X.509 certificate")
+                    }
+                    
+                    //Evaluate the embedded cert against the trust
+                    if SecTrustEvaluateWithError(trust, nil) == false {
+                        throw SSLError.fail(Int(errSSLXCertChainInvalid), "Bunded certificate does not match")
+                        
+                    }
+                    
+                }
+                
+                
+                
 				// Continue the handshake...
 				status = errSSLWouldBlock
 			}
