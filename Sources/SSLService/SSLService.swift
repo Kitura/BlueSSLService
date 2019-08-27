@@ -194,6 +194,7 @@ public class SSLService: SSLServiceDelegate {
         ///                                 against the locally embedded certificate. Pass `nil` to skip the check.
         ///                                 **Note:** This parameter is only used when `SSLService` is used with a client socket.
         ///                                 **Note:** This parameter is only available on Apple platforms
+        ///                                 **Note:** This feature unavailable (parameter ignored) on MacOS versions less than 10.14, iOS < 12.0
 		///
 		///	- Returns:	New Configuration instance.
 		///
@@ -1242,27 +1243,29 @@ public class SSLService: SSLServiceDelegate {
 				// Copy the trust into the context...
 				SSLCopyPeerTrust(sslContext, &self.trust)
                 
-                // Verify against a local embedded certificate
-                if let trust = self.trust, let path = configuration.embeddedServerCertPath {
-                    
-                    //Load data from file, then set it as the Anchor Certificate
-                    let data = try Data(contentsOf: path)
-                    if let cert = SecCertificateCreateWithData(nil, data as CFData) {
-                        status = SecTrustSetAnchorCertificates(trust, [cert] as CFArray)
-                        if status != errSecSuccess {
-                            try self.throwLastError(source: "SecTrustSetAnchorCertificates", err: status)
+                if #available(macOS 10.14, iOS 12.0, *) {
+                    // Verify against a local embedded certificate
+                    if let trust = self.trust, let path = configuration.embeddedServerCertPath {
+                        
+                        //Load data from file, then set it as the Anchor Certificate
+                        let data = try Data(contentsOf: path)
+                        if let cert = SecCertificateCreateWithData(nil, data as CFData) {
+                            status = SecTrustSetAnchorCertificates(trust, [cert] as CFArray)
+                            if status != errSecSuccess {
+                                try self.throwLastError(source: "SecTrustSetAnchorCertificates", err: status)
+                            }
                         }
-                    }
-                    else {
-                        throw SSLError.fail(Int(errSSLBadCert), "Bunded certificate is not a valid DER encoded X.509 certificate")
-                    }
-                    
-                    //Evaluate the embedded cert against the trust
-                    if SecTrustEvaluateWithError(trust, nil) == false {
-                        throw SSLError.fail(Int(errSSLXCertChainInvalid), "Bunded certificate does not match")
+                        else {
+                            throw SSLError.fail(Int(errSSLBadCert), "Bunded certificate is not a valid DER encoded X.509 certificate")
+                        }
+                        
+                        //Evaluate the embedded cert against the trust
+                        if SecTrustEvaluateWithError(trust, nil) == false {
+                            throw SSLError.fail(Int(errSSLXCertChainInvalid), "Bunded certificate does not match")
+                            
+                        }
                         
                     }
-                    
                 }
                 
                 
