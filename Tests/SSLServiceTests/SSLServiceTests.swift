@@ -349,7 +349,9 @@ class SSLServiceTests: XCTestCase {
 				socket.close()
 				XCTAssertFalse(socket.isActive)
 			}
-			
+
+            print("\nAttempting to connect to host: \(hostname):\(port)...")
+
 			// Connect to the server helper...
 			try socket.connect(using: signature)
 			if !socket.isConnected {
