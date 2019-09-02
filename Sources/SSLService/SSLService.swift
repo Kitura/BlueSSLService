@@ -174,8 +174,8 @@ public class SSLService: SSLServiceDelegate {
 		/// True if no backing certificates provided (Readonly).
 		public private(set) var noBackingCertificates = false
         
-        /// For clients that allow `self-signed` server certificates, verify against one provided locally
-        public private(set) var embeddedServerCertPath : URL? = nil
+        /// For clients that allow `self-signed` server certificates, verify against ones provided locally
+        public private(set) var embeddedServerCertPaths : [URL]? = nil
         
 		
 		// MARK: Lifecycle
@@ -183,7 +183,6 @@ public class SSLService: SSLServiceDelegate {
 		///
 		/// Initialize a configuration with no backing certificates.
 		///
-		///	- Warning:	**This API is not supported when running on Apple platforms**.
 		///
 		/// - Parameters:
 		///		- cipherSuite:				Optional String containing the cipher suite to use.
@@ -191,21 +190,21 @@ public class SSLService: SSLServiceDelegate {
 		///									`true` to accept self-signed certificates from a server. `false` otherwise.
 		///									**Note:** This parameter is only used when `SSLService` is used with a client socket.
         ///     - embeddedServerCertPath:    when client allows self-signed certificates from a server, verify to server certificate
-        ///                                 against the locally embedded certificate. Pass `nil` to skip the check.
+        ///                                 against one of the locally embedded certificates. Pass `nil` to skip the check.
         ///                                 **Note:** This parameter is only used when `SSLService` is used with a client socket.
         ///                                 **Note:** This parameter is only available on Apple platforms
         ///                                 **Note:** This feature unavailable (parameter ignored) on MacOS versions less than 10.14, iOS < 12.0
 		///
 		///	- Returns:	New Configuration instance.
 		///
-        public init(withCipherSuite cipherSuite: String? = nil, clientAllowsSelfSignedCertificates: Bool = true, embeddedServerCertPath : URL? = nil) {
+        public init(withCipherSuite cipherSuite: String? = nil, clientAllowsSelfSignedCertificates: Bool = true, embeddedServerCertPaths : [URL]? = nil) {
 			
 			self.noBackingCertificates = true
 			self.clientAllowsSelfSignedCertificates = clientAllowsSelfSignedCertificates
 			if cipherSuite != nil {
 				self.cipherSuite = cipherSuite!
 			}
-            self.embeddedServerCertPath = embeddedServerCertPath
+            self.embeddedServerCertPaths = embeddedServerCertPaths
 		}
 		
 		///
@@ -1246,23 +1245,29 @@ public class SSLService: SSLServiceDelegate {
                 #if swift(>=4.2)
                     if #available(macOS 10.14, iOS 12.0, *) {
                         // Verify against a local embedded certificate
-                        if let trust = self.trust, let path = configuration.embeddedServerCertPath {
+                        if let trust = self.trust, let paths = configuration.embeddedServerCertPaths {
                             
-                            //Load data from file, then set it as the Anchor Certificate
-                            let data = try Data(contentsOf: path)
-                            if let cert = SecCertificateCreateWithData(nil, data as CFData) {
-                                status = SecTrustSetAnchorCertificates(trust, [cert] as CFArray)
-                                if status != errSecSuccess {
-                                    try self.throwLastError(source: "SecTrustSetAnchorCertificates", err: status)
+                            //Load all the certs from files
+                            var certs : [SecCertificate] = []
+                            for path in paths {
+                                let data = try Data(contentsOf: path)
+                                if let cert = SecCertificateCreateWithData(nil, data as CFData) {  //load the cert and append it
+                                    certs.append(cert)
+                                }
+                                else {
+                                    throw SSLError.fail(Int(errSSLBadCert), "Bunded certificate is not a valid DER encoded X.509 certificate")
                                 }
                             }
-                            else {
-                                throw SSLError.fail(Int(errSSLBadCert), "Bunded certificate is not a valid DER encoded X.509 certificate")
+                            
+                            //Now add all certs as Anchor Certificates
+                            status = SecTrustSetAnchorCertificates(trust, certs as CFArray)
+                            if status != errSecSuccess {
+                                try self.throwLastError(source: "SecTrustSetAnchorCertificates", err: status)
                             }
                             
-                            //Evaluate the embedded cert against the trust
+                            //Evaluate the embedded certs against the trust
                             if SecTrustEvaluateWithError(trust, nil) == false {
-                                throw SSLError.fail(Int(errSSLXCertChainInvalid), "Bunded certificate does not match")
+                                throw SSLError.fail(Int(errSSLXCertChainInvalid), "No bunded certificate matches server certificate")
                                 
                             }
                             
