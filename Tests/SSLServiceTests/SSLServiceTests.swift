@@ -312,7 +312,7 @@ class SSLServiceTests: XCTestCase {
 		return nil
 	}
 	
-	func testSSLConfiguration() {
+	func test_SSLConfiguration() {
 		
 		self.createConfiguration()
 	}
@@ -401,11 +401,11 @@ class SSLServiceTests: XCTestCase {
 		
 	}
     
-    func testSecureReadWriteSelfSigned() {
+    func testSecureReadWrite_A_SelfSigned() {
         testSecureReadWrite(useEmbeddedCert: false)
     }
     
-    func testSecureReadWriteEmbedded() {
+    func testSecureReadWrite_B_Embedded() {
         testSecureReadWrite(useEmbeddedCert: true)
     }
     
@@ -417,9 +417,9 @@ class SSLServiceTests: XCTestCase {
     
 #else
     static var allTests = [
-        ("testSSLConfiguration", testSSLConfiguration),
-        ("testSecureReadWrite", testSecureReadWriteSelfSigned),
-        ("testSecureReadWriteEmbedded", testSecureReadWriteEmbedded),
+        ("testSSLConfiguration", test_SSLConfiguration),
+        ("testSecureReadWrite", testSecureReadWrite_A_SelfSigned),
+        ("testSecureReadWriteEmbedded", testSecureReadWrite_B_Embedded),
     ]
     
 #endif
