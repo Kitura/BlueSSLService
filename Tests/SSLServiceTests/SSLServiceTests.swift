@@ -411,8 +411,8 @@ class SSLServiceTests: XCTestCase {
     
 #if os(Linux)
 	static var allTests = [
-		("testSSLConfiguration", testSSLConfiguration),
-		("testSecureReadWrite", testSecureReadWriteSelfSigned),
+		("testSSLConfiguration", test_SSLConfiguration),
+		("testSecureReadWrite", testSecureReadWrite_A_SelfSigned),
 	]
     
 #else
