@@ -60,7 +60,7 @@ class SSLServiceTests: XCTestCase {
 	#if os(Linux)
 		let enableSSL = true
 	#else
-		let enableSSL = true
+		let enableSSL = false
 	#endif
 	
 	///
