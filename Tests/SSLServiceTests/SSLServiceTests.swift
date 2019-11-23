@@ -118,7 +118,17 @@ class SSLServiceTests: XCTestCase {
 		
 	}
 	
-	func createSecureHelper(family: Socket.ProtocolFamily = .inet) throws -> Socket {
+    
+    func createEmbeddedCertConfiguration() {
+        let certPath = SSLServiceTests.getFilePath(for: "cert", ofType: "der")
+        XCTAssertNotNil(self.certPath)
+        print("Using embedded cert: \(certPath!)")
+        
+        self.configuration = SSLService.Configuration(clientAllowsSelfSignedCertificates: true, embeddedServerCertPaths: [certPath!])
+    }
+    
+    
+    func createSecureHelper(family: Socket.ProtocolFamily = .inet, useEmbeddedCert: Bool) throws -> Socket {
 		
 		let socket = try Socket.create(family: family)
 		XCTAssertNotNil(socket)
@@ -127,8 +137,17 @@ class SSLServiceTests: XCTestCase {
 		
 		if enableSSL {
 		
-			self.createConfiguration()
-		
+            if useEmbeddedCert {
+                self.createEmbeddedCertConfiguration()
+            }
+            else {
+                #if os(Linux)
+                self.createConfiguration()  //cannot use this function as a client on Apple platforms
+                #else
+                self.configuration = SSLService.Configuration(clientAllowsSelfSignedCertificates: true)  //simple client connection accepting self signed certs
+                #endif
+            }
+            
 			let service = try SSLService(usingConfiguration: self.configuration!)
 			XCTAssertNotNil(service)
 		
@@ -293,12 +312,12 @@ class SSLServiceTests: XCTestCase {
 		return nil
 	}
 	
-	func testSSLConfiguration() {
+	func test_SSLConfiguration() {
 		
 		self.createConfiguration()
 	}
 	
-	func testSecureReadWrite() {
+    func testSecureReadWrite(useEmbeddedCert : Bool) {
 		
 		let hostname = "127.0.0.1"
 		let port: Int32 = 1337
@@ -322,7 +341,7 @@ class SSLServiceTests: XCTestCase {
 			let signature = try Socket.Signature(protocolFamily: .inet, socketType: .stream, proto: .tcp, hostname: hostname, port: port)!
 			
 			// Create the socket...
-			let socket = try createSecureHelper()
+			let socket = try createSecureHelper(useEmbeddedCert: useEmbeddedCert)
 			
 			// Defer cleanup...
 			defer {
@@ -330,7 +349,9 @@ class SSLServiceTests: XCTestCase {
 				socket.close()
 				XCTAssertFalse(socket.isActive)
 			}
-			
+
+            print("\nAttempting to connect to host: \(hostname):\(port)...")
+
 			// Connect to the server helper...
 			try socket.connect(using: signature)
 			if !socket.isConnected {
@@ -379,9 +400,28 @@ class SSLServiceTests: XCTestCase {
 		}
 		
 	}
-
+    
+    func testSecureReadWrite_A_SelfSigned() {
+        testSecureReadWrite(useEmbeddedCert: false)
+    }
+    
+    func testSecureReadWrite_B_Embedded() {
+        testSecureReadWrite(useEmbeddedCert: true)
+    }
+    
+#if os(Linux)
 	static var allTests = [
-		("testSSLConfiguration", testSSLConfiguration),
-		("testSecureReadWrite", testSecureReadWrite),
+		("testSSLConfiguration", test_SSLConfiguration),
+		("testSecureReadWrite", testSecureReadWrite_A_SelfSigned),
 	]
+    
+#else
+    static var allTests = [
+        ("testSSLConfiguration", test_SSLConfiguration),
+        ("testSecureReadWrite", testSecureReadWrite_A_SelfSigned),
+        ("testSecureReadWriteEmbedded", testSecureReadWrite_B_Embedded),
+    ]
+    
+#endif
+    
 }
