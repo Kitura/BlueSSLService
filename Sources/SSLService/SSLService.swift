@@ -54,7 +54,8 @@ public class SSLService: SSLServiceDelegate {
 	/// Default verfication depth
 	static let DEFAULT_VERIFY_DEPTH: Int32 = 2
 	
-        static let sslInitQueue = DispatchQueue(label: "sslInitQueue")
+	/// Dispatch queue for SSL initialization
+	static let sslInitQueue = DispatchQueue(label: "sslInitQueue")
 
 	#if !os(Linux)
 	
@@ -174,7 +175,7 @@ public class SSLService: SSLServiceDelegate {
 		/// True if no backing certificates provided (Readonly).
 		public private(set) var noBackingCertificates = false
         
-        /// For clients that allow `self-signed` server certificates, verify against ones provided locally
+        /// For clients that allow `self-signed` server certificates, verify against ones provided locally.
         public private(set) var embeddedServerCertPaths : [URL]? = nil
         
 		
@@ -1076,9 +1077,11 @@ public class SSLService: SSLServiceDelegate {
 					
 					// 	- Import the PKCS12 file...
 					try SSLService.sslInitQueue.sync {
+						
 					    status = SecPKCS12Import(p12Data, options, &items)
+						
 					    if status != errSecSuccess {
-						try self.throwLastError(source: "SecPKCS12Import", err: status)
+							try self.throwLastError(source: "SecPKCS12Import", err: status)
 					    }
 					}
 					
@@ -1244,31 +1247,33 @@ public class SSLService: SSLServiceDelegate {
                 
                 #if swift(>=4.2)
                     if #available(macOS 10.14, iOS 12.0, *) {
-                        // Verify against a local embedded certificate
+                        // Verify against a local embedded certificate...
                         if let trust = self.trust, let paths = configuration.embeddedServerCertPaths {
                             
-                            //Load all the certs from files
+                            // Load all the certs from files
                             var certs : [SecCertificate] = []
                             for path in paths {
                                 let data = try Data(contentsOf: path)
-                                if let cert = SecCertificateCreateWithData(nil, data as CFData) {  //load the cert and append it
+								
+								// Load the cert and append it
+                                if let cert = SecCertificateCreateWithData(nil, data as CFData) {
                                     certs.append(cert)
-                                }
-                                else {
+                                
+								} else {
+									
                                     throw SSLError.fail(Int(errSSLBadCert), "Bunded certificate is not a valid DER encoded X.509 certificate")
                                 }
                             }
                             
-                            //Now add all certs as Anchor Certificates
+                            // Now add all certs as Anchor Certificates...
                             status = SecTrustSetAnchorCertificates(trust, certs as CFArray)
                             if status != errSecSuccess {
                                 try self.throwLastError(source: "SecTrustSetAnchorCertificates", err: status)
                             }
                             
-                            //Evaluate the embedded certs against the trust
+                            // Evaluate the embedded certs against the trust...
                             if SecTrustEvaluateWithError(trust, nil) == false {
                                 throw SSLError.fail(Int(errSSLXCertChainInvalid), "No bunded certificate matches server certificate")
-                                
                             }
                             
                         }
