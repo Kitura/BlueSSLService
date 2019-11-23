@@ -1246,7 +1246,7 @@ public class SSLService: SSLServiceDelegate {
 				SSLCopyPeerTrust(sslContext, &self.trust)
                 
                 #if swift(>=4.2)
-                    if #available(macOS 10.14, iOS 12.0, *) {
+				if #available(macOS 10.14, iOS 12.0, tvOS 12.0, *) {
                         // Verify against a local embedded certificate...
                         if let trust = self.trust, let paths = configuration.embeddedServerCertPaths {
                             
