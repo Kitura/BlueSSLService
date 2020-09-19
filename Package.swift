@@ -5,7 +5,7 @@
 //  Package.swift
 //  SSLService
 //
-//  Copyright © 2016 IBM. All rights reserved.
+//  Copyright © 2016 IBM and the authors of the Kitura project. All rights reserved.
 //
 //     Licensed under the Apache License, Version 2.0 (the "License");
 //     you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ var targetDependencies: [Target.Dependency] = [.byName(name: "Socket")]
 
 #if os(Linux)
 
-	packageDependencies.append(.package(url: "https://github.com/IBM-Swift/OpenSSL.git", from: "2.0.0"))
+	packageDependencies.append(.package(url: "https://github.com/Kitura/OpenSSL.git", from: "2.0.0"))
 
 	targetDependencies.append(.byName(name: "OpenSSL"))
 
