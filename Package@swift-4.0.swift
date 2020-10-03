@@ -24,12 +24,12 @@ import PackageDescription
 
 #if os(Linux) || os(macOS) || os(iOS) || os(tvOS)
 
-var packageDependencies: [Package.Dependency] = [.package(url: "https://github.com/Kitura/BlueSocket.git", from: "1.0.0")]
+var packageDependencies: [Package.Dependency] = [.package(url: "https://github.com/Kitura/BlueSocket.git", from: "1.0.200")]
 var targetDependencies: [Target.Dependency] = [.byNameItem(name: "Socket")]
 
 #if os(Linux)
 	
-packageDependencies.append(.package(url: "https://github.com/Kitura/OpenSSL.git", from: "1.0.0"))
+packageDependencies.append(.package(url: "https://github.com/Kitura/OpenSSL.git", from: "1.0.200"))
 targetDependencies.append(.byNameItem(name: "OpenSSL"))
 
 #endif
