@@ -2,8 +2,8 @@
     <a href="https://www.kitura.io/packages.html#all">
     <img src="https://img.shields.io/badge/docs-kitura.io-1FBCE4.svg" alt="APIDoc">
     </a>
-    <a href="https://travis-ci.org/IBM-Swift/BlueSSLService">
-    <img src="https://travis-ci.org/IBM-Swift/BlueSSLService.svg?branch=master" alt="Build Status - Master">
+    <a href="https://travis-ci.org/Kitura/BlueSSLService">
+    <img src="https://travis-ci.org/Kitura/BlueSSLService.svg?branch=master" alt="Build Status - Master">
     </a>
     <img src="https://img.shields.io/badge/os-macOS-green.svg?style=flat" alt="macOS">
     <img src="https://img.shields.io/badge/os-iOS-green.svg?style=flat" alt="iOS">
@@ -16,7 +16,7 @@
 
 # BlueSSLService
 
-SSL/TLS Add-in framework for [BlueSocket](https://github.com/IBM-Swift/BlueSocket.git) in Swift using the Swift Package Manager. Works on supported Apple platforms (using Secure Transport) and on Linux (using OpenSSL).
+SSL/TLS Add-in framework for [BlueSocket](https://github.com/Kitura/BlueSocket.git) in Swift using the Swift Package Manager. Works on supported Apple platforms (using Secure Transport) and on Linux (using OpenSSL).
 
 ## Prerequisites
 
@@ -211,4 +211,4 @@ We love to talk server-side Swift and Kitura. Join our [Slack](http://swift-at-i
 
 ## License
 
-This library is licensed under Apache 2.0. Full license text is available in [LICENSE](https://github.com/IBM-Swift/BlueSSLService/blob/master/LICENSE).
+This library is licensed under Apache 2.0. Full license text is available in [LICENSE](https://github.com/Kitura/BlueSSLService/blob/master/LICENSE).
