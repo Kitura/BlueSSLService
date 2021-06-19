@@ -25,7 +25,7 @@ matrix:
       dist: xenial
       sudo: required
       services: docker
-      env: DOCKER_IMAGE=docker.kitura.net/kitura/swift-ci-ubuntu18.04:latest SWIFT_SNAPSHOT=$SWIFT_DEVELOPMENT_SNAPSHOT
+      env: DOCKER_IMAGE=docker.kitura.net/kitura/swift-ci-ubuntu18.04:latest USE_SWIFT_DEVELOPMENT_SNAPSHOT=1
     - os: osx
       osx_image: xcode11
       sudo: required
@@ -33,11 +33,10 @@ matrix:
     - os: osx
       osx_image: xcode12.2
       sudo: required
-      #env: SWIFT_SNAPSHOT=5.1.5
     - os: osx
       osx_image: xcode12.5
       sudo: required
-      env: SWIFT_SNAPSHOT=$SWIFT_DEVELOPMENT_SNAPSHOT
+      env: USE_SWIFT_DEVELOPMENT_SNAPSHOT=1
 
 before_install:
   - git clone https://github.com/Kitura/Package-Builder.git
