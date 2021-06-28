@@ -26,6 +26,8 @@ SSL/TLS Add-in framework for [BlueSocket](https://github.com/Kitura/BlueSocket.g
 * Swift Open Source `swift-5.4-RELEASE` toolchain (**Recommended**)
 * Swift toolchain included in *Xcode Version 11.0 or higher*.
 
+BlueSSLService version 2.0 and above supports Swift 5.1+.  See older versions of BlueSSLService for older versions of Swift.
+
 ### macOS
 
 * macOS 10.14.6 (*Mojave*) or higher.
