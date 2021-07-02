@@ -24,7 +24,7 @@ import PackageDescription
 
 #if os(Linux) || os(macOS) || os(iOS) || os(tvOS)
 
-var packageDependencies: [Package.Dependency] = [.package(url: "https://github.com/Kitura/BlueSocket.git", from: "1.0.200")]
+var packageDependencies: [Package.Dependency] = [.package(url: "https://github.com/Kitura/BlueSocket.git", from: "2.0.0")]
 var targetDependencies: [Target.Dependency] = [.byName(name: "Socket")]
 
 #if os(Linux)
