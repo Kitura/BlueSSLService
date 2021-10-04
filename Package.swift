@@ -24,7 +24,7 @@ import PackageDescription
 
 #if os(Linux) || os(macOS) || os(iOS) || os(tvOS)
 
-var packageDependencies: [Package.Dependency] = [.package(url: "https://github.com/Kitura/BlueSocket.git", from: "2.0.0")]
+var packageDependencies: [Package.Dependency] = [.package(url: "https://github.com/Kitura/BlueSocket.git", from: "2.0.2")]
 var targetDependencies: [Target.Dependency] = [.byName(name: "Socket")]
 
 #if os(Linux)
@@ -55,8 +55,7 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages which this package depends on.
         .target(
             name: "SSLService",
-            dependencies: targetDependencies,
-            exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]
+            dependencies: targetDependencies
 		),
 		.testTarget(
 			name: "SSLServiceTests",
