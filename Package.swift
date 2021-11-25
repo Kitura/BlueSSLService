@@ -5,7 +5,7 @@
 //  Package.swift
 //  SSLService
 //
-//  Copyright © 2016 IBM. All rights reserved.
+//  Copyright © 2016-2020 IBM and the authors of the Kitura project. All rights reserved.
 //
 //     Licensed under the Apache License, Version 2.0 (the "License");
 //     you may not use this file except in compliance with the License.
@@ -24,12 +24,12 @@ import PackageDescription
 
 #if os(Linux) || os(macOS) || os(iOS) || os(tvOS)
 
-var packageDependencies: [Package.Dependency] = [.package(url: "https://github.com/IBM-Swift/BlueSocket.git", from: "1.0.0")]
+var packageDependencies: [Package.Dependency] = [.package(url: "https://github.com/Kitura/BlueSocket.git", from: "2.0.2")]
 var targetDependencies: [Target.Dependency] = [.byName(name: "Socket")]
 
 #if os(Linux)
 
-	packageDependencies.append(.package(url: "https://github.com/IBM-Swift/OpenSSL.git", from: "2.0.0"))
+	packageDependencies.append(.package(url: "https://github.com/Kitura/OpenSSL.git", from: "2.0.200"))
 
 	targetDependencies.append(.byName(name: "OpenSSL"))
 
@@ -55,8 +55,7 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages which this package depends on.
         .target(
             name: "SSLService",
-            dependencies: targetDependencies,
-            exclude: ["SSLService.xcodeproj", "README.md", "Sources/Info.plist"]
+            dependencies: targetDependencies
 		),
 		.testTarget(
 			name: "SSLServiceTests",
