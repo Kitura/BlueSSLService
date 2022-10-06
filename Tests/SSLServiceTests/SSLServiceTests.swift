@@ -322,7 +322,6 @@ class SSLServiceTests: XCTestCase {
 		let hostname = "127.0.0.1"
 		let port: Int32 = 1337
 		
-		let bufSize = 4096
 		var data = Data()
 		
 		do {

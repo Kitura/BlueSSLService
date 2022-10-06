@@ -1318,8 +1318,8 @@ public class SSLService: SSLServiceDelegate {
 					let reason = "ERROR: verifyConnection, code: \(ECONNABORTED), reason: Unable to reference connection)"
 					throw SSLError.fail(Int(ECONNABORTED), reason)
 				}
-			
-				if SSL_get_peer_certificate(.make(optional: sslConnect)) != nil {
+
+				if SSL_get1_peer_certificate(.make(optional: sslConnect)) != nil {
 				
 					let rc = SSL_get_verify_result(.make(optional: sslConnect))
 					switch rc {
@@ -1398,19 +1398,14 @@ public class SSLService: SSLServiceDelegate {
 			if errorCode == 0 {
 				return
 			}
-			
-			if let errorStr = ERR_reason_error_string(UInt(errorCode)) {
-				errorString = String(validatingUTF8: errorStr)!
 
-				if let errorFunc = ERR_func_error_string(UInt(errorCode)) {
-					errorString = String(validatingUTF8: errorFunc)! + ":" + errorString
-				}
-				
-			} else {
-				
-				errorString = "Could not determine error reason."
-			}
-			
+            let strBufferMaxLen = 256
+            var cBuffer: [CChar] = [CChar](repeating: .zero, count: strBufferMaxLen+1)
+
+			ERR_error_string_n(UInt(errorCode), &cBuffer, strBufferMaxLen)
+
+            errorString = String(validatingUTF8: cBuffer) ?? "Could not determine error reason."
+
 		#else
 			
 			// If no error, just return...
