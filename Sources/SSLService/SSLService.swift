@@ -1318,7 +1318,7 @@ public class SSLService: SSLServiceDelegate {
 					let reason = "ERROR: verifyConnection, code: \(ECONNABORTED), reason: Unable to reference connection)"
 					throw SSLError.fail(Int(ECONNABORTED), reason)
 				}
-			
+
 				if SSL_get1_peer_certificate(.make(optional: sslConnect)) != nil {
 				
 					let rc = SSL_get_verify_result(.make(optional: sslConnect))

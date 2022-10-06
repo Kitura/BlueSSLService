@@ -29,7 +29,7 @@ var targetDependencies: [Target.Dependency] = [.byName(name: "Socket")]
 
 #if os(Linux)
 
-	packageDependencies.append(.package(url: "https://github.com/Kitura/OpenSSL.git", from: "2.0.200"))
+	packageDependencies.append(.package(url: "https://github.com/Kitura/OpenSSL.git", from: "2.3.1"))
 
 	targetDependencies.append(.byName(name: "OpenSSL"))
 
