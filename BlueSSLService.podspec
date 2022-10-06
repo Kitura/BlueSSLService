@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name        = "BlueSSLService"
-  s.version     = "2.0.1"
+  s.version     = "2.0.2"
   s.summary     = "SSL/TLS Add-in framework for BlueSocket in Swift"
   s.homepage    = "https://github.com/Kitura/BlueSSLService"
   s.license     = { :type => "Apache License, Version 2.0" }
