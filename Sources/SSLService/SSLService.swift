@@ -191,7 +191,7 @@ public class SSLService: SSLServiceDelegate {
 		///									`true` to accept self-signed certificates from a server. `false` otherwise.
 		///									**Note:** This parameter is only used when `SSLService` is used with a client socket.
         ///     - embeddedServerCertPath:    when client allows self-signed certificates from a server, verify to server certificate
-        ///                                 against one of the locally embedded certificates. Pass `nil` to skip the check.
+        ///                                 against one of the locally .der encoded x509 embedded certificates. Pass `nil` to skip the check.
         ///                                 **Note:** This parameter is only used when `SSLService` is used with a client socket.
         ///                                 **Note:** This parameter is only available on Apple platforms
         ///                                 **Note:** This feature unavailable (parameter ignored) on MacOS versions less than 10.14, iOS < 12.0
@@ -1247,8 +1247,17 @@ public class SSLService: SSLServiceDelegate {
                 
                 #if swift(>=4.2)
 				if #available(macOS 10.14, iOS 12.0, tvOS 12.0, *) {
+                    
+                        //create a basic X509 policy to validate against instead of the more stringent
+                        //SSL policy. The SSL policy validates the hostname and may have other restrictions
+                        //not needed when using pinned self-signed certificates
+                        let policy = SecPolicyCreateBasicX509()
+                    
                         // Verify against a local embedded certificate...
                         if let trust = self.trust, let paths = configuration.embeddedServerCertPaths {
+                            
+                            SecTrustSetPolicies(trust, policy)
+
                             
                             // Load all the certs from files
                             var certs : [SecCertificate] = []
